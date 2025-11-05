@@ -48,9 +48,7 @@ FPS_MIN_FRAMES = 4
 FPS_MAX_FRAMES = 256
 
 
-def adjust_by_factor(
-    number: int, factor: int, method: Literal["round", "ceil", "floor"] = "round"
-) -> int:
+def adjust_by_factor(number: int, factor: int, method: Literal["round", "ceil", "floor"] = "round") -> int:
     """Adjusts 'number' to the nearest, ceiling, or floor multiple of 'factor'."""
     op = {"round": round, "ceil": math.ceil, "floor": math.floor}[method]
     return op(number / factor) * factor
@@ -86,15 +84,11 @@ def fetch_image(ele: dict[str, str | Image.Image]) -> Image.Image:
     else:
         image_obj = Image.open(image)
     if image_obj is None:
-        raise ValueError(
-            f"Unrecognized image input, support local path, http url, base64 and PIL.Image, got {image}"
-        )
+        raise ValueError(f"Unrecognized image input, support local path, http url, base64 and PIL.Image, got {image}")
     image = to_rgb(image_obj)
     if "scale_factor" in ele:
         scale_factor = ele["scale_factor"]
-        image = image.resize(
-            (image.width * scale_factor, image.height * scale_factor), Image.BILINEAR
-        )
+        image = image.resize((image.width * scale_factor, image.height * scale_factor), Image.BILINEAR)
     return image
 
 
@@ -126,9 +120,7 @@ def smart_nframes(
         nframes = adjust_by_factor(ele["nframes"], FRAME_FACTOR, method="round")
     else:
         fps = ele.get("fps", FPS)
-        min_frames = adjust_by_factor(
-            ele.get("min_frames", FPS_MIN_FRAMES), FRAME_FACTOR, method="ceil"
-        )
+        min_frames = adjust_by_factor(ele.get("min_frames", FPS_MIN_FRAMES), FRAME_FACTOR, method="ceil")
         max_frames = adjust_by_factor(
             ele.get("max_frames", min(FPS_MAX_FRAMES, total_frames)), FRAME_FACTOR, method="floor"
         )
@@ -138,9 +130,7 @@ def smart_nframes(
         nframes = min(min(max(nframes, min_frames), max_frames), total_frames)
         nframes = adjust_by_factor(nframes, FRAME_FACTOR, method="floor")
     if not (FRAME_FACTOR <= nframes and nframes <= total_frames):
-        raise ValueError(
-            f"nframes should in interval [{FRAME_FACTOR}, {total_frames}], but got {nframes}."
-        )
+        raise ValueError(f"nframes should in interval [{FRAME_FACTOR}, {total_frames}], but got {nframes}.")
     return nframes
 
 
@@ -151,9 +141,7 @@ def _read_video_torchvision(
     video_path = ele["video"]
     if version.parse(torchvision.__version__) < version.parse("0.19.0"):
         if "http://" in video_path or "https://" in video_path:
-            warnings.warn(
-                "torchvision < 0.19.0 does not support http/https video path, please upgrade to 0.19.0."
-            )
+            warnings.warn("torchvision < 0.19.0 does not support http/https video path, please upgrade to 0.19.0.")
         if "file://" in video_path:
             video_path = video_path[7:]
     st = time.time()
@@ -165,9 +153,7 @@ def _read_video_torchvision(
         output_format="TCHW",
     )
     total_frames, video_fps = video.size(0), info["video_fps"]
-    logger.info(
-        f"torchvision:  {video_path=}, {total_frames=}, {video_fps=}, time={time.time() - st:.3f}s"
-    )
+    logger.info(f"torchvision:  {video_path=}, {total_frames=}, {video_fps=}, time={time.time() - st:.3f}s")
     nframes = smart_nframes(ele, total_frames=total_frames, video_fps=video_fps)
     # Calculate frame indices and corresponding timestamps (based on video start time)
     idx = torch.linspace(0, total_frames - 1, nframes).round().long()
@@ -196,9 +182,7 @@ def _read_video_decord(
     if "video_start" in ele or "video_end" in ele:
         raise NotImplementedError("not support start_pts and end_pts in decord for now.")
     total_frames, video_fps = len(vr), vr.get_avg_fps()
-    logger.info(
-        f"decord:  {video_path=}, {total_frames=}, {video_fps=}, time={time.time() - st:.3f}s"
-    )
+    logger.info(f"decord:  {video_path=}, {total_frames=}, {video_fps=}, time={time.time() - st:.3f}s")
     nframes = smart_nframes(ele, total_frames=total_frames, video_fps=video_fps)
     idx = torch.linspace(0, total_frames - 1, nframes).round().long().tolist()
     start_time = ele.get("video_start", 0.0)  # TODO:
@@ -224,17 +208,13 @@ def get_video_reader_backend() -> str:
     return video_reader_backend
 
 
-def fetch_video(
-    ele: dict, return_video_sample_fps: bool = False
-) -> torch.Tensor | list[Image.Image]:
+def fetch_video(ele: dict, return_video_sample_fps: bool = False) -> torch.Tensor | list[Image.Image]:
     if isinstance(ele["video"], str):
         video_reader_backend = get_video_reader_backend()
         try:
             video, sample_fps, timestamps = VIDEO_READER_BACKENDS[video_reader_backend](ele)
         except Exception as e:
-            logger.warning(
-                f"video_reader_backend {video_reader_backend} error, use torchvision as default, msg: {e}"
-            )
+            logger.warning(f"video_reader_backend {video_reader_backend} error, use torchvision as default, msg: {e}")
             video, sample_fps, timestamps = VIDEO_READER_BACKENDS["torchvision"](ele)
 
         nframes, _, height, width = video.shape
@@ -247,9 +227,7 @@ def fetch_video(
         process_info = ele.copy()
         process_info.pop("type", None)
         process_info.pop("video", None)
-        images = [
-            fetch_image({"image": video_element, **process_info}) for video_element in ele["video"]
-        ]
+        images = [fetch_image({"image": video_element, **process_info}) for video_element in ele["video"]]
         nframes = adjust_by_factor(len(images), FRAME_FACTOR, method="ceil")
         if len(images) < nframes:
             images.extend([images[-1]] * (nframes - len(images)))
@@ -326,12 +304,8 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
         **kwargs,
     ):
         self.vision_feature_select_strategy = vision_feature_select_strategy
-        self.image_token = (
-            tokenizer.image_token if hasattr(tokenizer, "image_token") else image_token
-        )
-        self.video_token = (
-            tokenizer.video_token if hasattr(tokenizer, "video_token") else video_token
-        )
+        self.image_token = tokenizer.image_token if hasattr(tokenizer, "image_token") else image_token
+        self.video_token = tokenizer.video_token if hasattr(tokenizer, "video_token") else video_token
         self.image_token_id = (
             tokenizer.image_token_id
             if getattr(tokenizer, "image_token_id", None)
@@ -351,10 +325,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
             self.auto_map = kwargs["auto_map"]
         super().__init__(image_processor, tokenizer, chat_template=chat_template)
 
-    def replace_media_placeholder(
-        self, text, image_list, video_list, timestamps_list, fps_list, **output_kwargs
-    ):
-
+    def replace_media_placeholder(self, text, image_list, video_list, timestamps_list, fps_list, **output_kwargs):
         num_of_images_in_this_sample = 0
         num_of_videos_in_this_sample = 0
         # Regular expression pattern to match formats like <image-1> or <video-2>
@@ -376,9 +347,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
         video_max_dynamic_tiles = output_kwargs["videos_kwargs"].get(
             "max_dynamic_tiles", self.image_processor.max_dynamic_tiles
         )
-        video_use_thumbnail = output_kwargs["videos_kwargs"].get(
-            "use_thumbnail", self.image_processor.use_thumbnail
-        )
+        video_use_thumbnail = output_kwargs["videos_kwargs"].get("use_thumbnail", self.image_processor.use_thumbnail)
 
         tile_size = self.image_processor.size.get("height", 448)
 
@@ -411,7 +380,10 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
                         **output_kwargs["images_kwargs"],
                     )
                     num_all_tiles = image_inputs["pixel_values"].shape[0]
-                    special_placeholder = f"<image {idx_in_list+1}>{self.image_start_token}{self.image_token * num_all_tiles * self.tokens_per_tile}{self.image_end_token}"
+                    special_placeholder = (
+                        "<image"
+                        f" {idx_in_list+1}>{self.image_start_token}{self.image_token * num_all_tiles * self.tokens_per_tile}{self.image_end_token}"
+                    )
                     unified_frame_list.append(image_inputs)
                     num_of_images_in_this_sample += 1
 
@@ -439,21 +411,25 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
                         )
                         for image_size in image_sizes
                     ]
-                    assert (
-                        sum(num_of_tiles_each_frame) == num_all_tiles
-                    ), f"The number of tiles in each frame is not equal to the total number of tiles: {sum(num_of_tiles_each_frame)} != {num_all_tiles}"
+                    assert sum(num_of_tiles_each_frame) == num_all_tiles, (
+                        "The number of tiles in each frame is not equal to the total number of tiles:"
+                        f" {sum(num_of_tiles_each_frame)} != {num_all_tiles}"
+                    )
 
                     if frame_timestamps is not None:
-                        assert len(frame_timestamps) == len(
-                            num_of_tiles_each_frame
-                        ), f"The number of timestamps is not equal to the number of frames: {len(frame_timestamps)} != {len(num_of_tiles_each_frame)}"
+                        assert len(frame_timestamps) == len(num_of_tiles_each_frame), (
+                            f"The number of timestamps is not equal to the number of frames: {len(frame_timestamps)} !="
+                            f" {len(num_of_tiles_each_frame)}"
+                        )
                         special_placeholder = [
-                            f"Frame {i+1} sample at {frame_timestamps[i]:.2f}s: {self.image_start_token}{self.image_token * num_of_tiles * self.tokens_per_tile}{self.image_end_token}"
+                            f"Frame {i+1} sample at {frame_timestamps[i]:.2f}s:"
+                            f" {self.image_start_token}{self.image_token * num_of_tiles * self.tokens_per_tile}{self.image_end_token}"
                             for i, num_of_tiles in enumerate(num_of_tiles_each_frame)
                         ]
                     else:
                         special_placeholder = [
-                            f"Frame {i+1}: {self.image_start_token}{self.image_token * num_of_tiles * self.tokens_per_tile}{self.image_end_token}"
+                            f"Frame {i+1}:"
+                            f" {self.image_start_token}{self.image_token * num_of_tiles * self.tokens_per_tile}{self.image_end_token}"
                             for i, num_of_tiles in enumerate(num_of_tiles_each_frame)
                         ]
 
@@ -463,9 +439,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
                             + "".join(special_placeholder)
                         )
                     else:
-                        special_placeholder = f"The {idx_mapper[idx_in_list]} video: " + "".join(
-                            special_placeholder
-                        )
+                        special_placeholder = f"The {idx_mapper[idx_in_list]} video: " + "".join(special_placeholder)
                     unified_frame_list.append(video_inputs)
                     num_of_videos_in_this_sample += 1
                 else:
@@ -553,9 +527,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
         timestamps_batch = output_kwargs["videos_kwargs"].pop("timestamps", None)
         fps_batch = output_kwargs["videos_kwargs"].pop("fps", None)
         for sample in text_list:
-            timestamps_list = (
-                timestamps_batch[video_start_idx:] if timestamps_batch is not None else None
-            )
+            timestamps_list = timestamps_batch[video_start_idx:] if timestamps_batch is not None else None
             fps_list = fps_batch[video_start_idx:] if fps_batch is not None else None
             (
                 sample,
@@ -663,10 +635,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
         self,
         conversations: list[dict] | list[list[dict]],
         return_video_kwargs: bool = False,
-    ) -> tuple[
-        list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]
-    ]:
-
+    ) -> tuple[list[Image.Image] | None, list[torch.Tensor | list[Image.Image]] | None, Optional[dict]]:
         vision_infos = self.extract_vision_info(conversations)
         ## Read images or videos
         image_inputs = []
@@ -677,9 +646,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
             if "image" in vision_info or "image_url" in vision_info:
                 image_inputs.append(fetch_image(vision_info))
             elif "video" in vision_info:
-                video_input, video_sample_fps, video_timestamps = fetch_video(
-                    vision_info, return_video_sample_fps=True
-                )
+                video_input, video_sample_fps, video_timestamps = fetch_video(vision_info, return_video_sample_fps=True)
                 video_sample_fps_list.append(video_sample_fps)
                 video_inputs.append(video_input)
                 video_timestamps_list.append(video_timestamps)
@@ -784,9 +751,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
                         if candidate_token not in message_text:
                             result += candidate_token
                     # Check if the item is a video.
-                    elif isinstance(item, dict) and (
-                        item.get("type") == "video" or "video" in item
-                    ):
+                    elif isinstance(item, dict) and (item.get("type") == "video" or "video" in item):
                         video_count += 1
                         candidate_token = f"<video-{video_count}>"
                         # Only add the token if it is not already present.
@@ -834,9 +799,7 @@ class Eagle2_5_VLProcessor(ProcessorMixin):
         # if "auto_map" in processor_dict:
         #    del processor_dict["auto_map"]
 
-        unused_kwargs = cls.validate_init_kwargs(
-            processor_config=processor_dict, valid_kwargs=cls.valid_kwargs
-        )
+        unused_kwargs = cls.validate_init_kwargs(processor_config=processor_dict, valid_kwargs=cls.valid_kwargs)
         processor = cls(*args, **processor_dict)
 
         # Update processor with kwargs if needed

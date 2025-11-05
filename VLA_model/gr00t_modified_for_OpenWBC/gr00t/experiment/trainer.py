@@ -94,25 +94,19 @@ class DualBrainTrainer(transformers.Trainer):
             optimizer_grouped_parameters = [
                 {
                     "params": [
-                        p
-                        for n, p in opt_model.named_parameters()
-                        if (n in decay_parameters and p.requires_grad)
+                        p for n, p in opt_model.named_parameters() if (n in decay_parameters and p.requires_grad)
                     ],
                     "weight_decay": self.args.weight_decay,
                 },
                 {
                     "params": [
-                        p
-                        for n, p in opt_model.named_parameters()
-                        if (n not in decay_parameters and p.requires_grad)
+                        p for n, p in opt_model.named_parameters() if (n not in decay_parameters and p.requires_grad)
                     ],
                     "weight_decay": 0.0,
                 },
             ]
 
-            optimizer_cls, optimizer_kwargs = transformers.Trainer.get_optimizer_cls_and_kwargs(
-                self.args
-            )
+            optimizer_cls, optimizer_kwargs = transformers.Trainer.get_optimizer_cls_and_kwargs(self.args)
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
 
         return self.optimizer
@@ -141,13 +135,9 @@ class DualBrainTrainer(transformers.Trainer):
         if isinstance(resume_from_checkpoint, bool) and resume_from_checkpoint:
             resume_from_checkpoint = get_last_checkpoint(self.args.output_dir)
             if resume_from_checkpoint is None:
-                raise ValueError(
-                    f"No valid checkpoint found in output directory ({self.args.output_dir})"
-                )
+                raise ValueError(f"No valid checkpoint found in output directory ({self.args.output_dir})")
 
         if resume_from_checkpoint is not None:
             # In case of repeating the find_executable_batch_size, set `self._train_batch_size` properly
-            self.state = TrainerState.load_from_json(
-                os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME)
-            )
+            self.state = TrainerState.load_from_json(os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME))
         return super().train(resume_from_checkpoint, trial, ignore_keys_for_eval, **kwargs)

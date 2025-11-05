@@ -14,20 +14,16 @@
 # limitations under the License.
 import os
 
+import gr00t
 import torch
 from torch import nn
 from transformers import AutoConfig, AutoModel
 from transformers.feature_extraction_utils import BatchFeature
 
-import gr00t
-
-DEFAULT_EAGLE_PATH = os.path.join(
-    os.path.dirname(gr00t.__file__), "model", "backbone", "eagle2_hg_model"
-)
+DEFAULT_EAGLE_PATH = os.path.join(os.path.dirname(gr00t.__file__), "model", "backbone", "eagle2_hg_model")
 
 
 class EagleBackbone(nn.Module):
-
     def __init__(
         self,
         tune_llm: bool = False,
@@ -99,11 +95,7 @@ class EagleBackbone(nn.Module):
 
     def forward_eagle(self, vl_input: BatchFeature) -> BatchFeature:
         eagle_prefix = "eagle_"
-        eagle_input = {
-            k.removeprefix(eagle_prefix): v
-            for k, v in vl_input.items()
-            if k.startswith(eagle_prefix)
-        }
+        eagle_input = {k.removeprefix(eagle_prefix): v for k, v in vl_input.items() if k.startswith(eagle_prefix)}
         del eagle_input["image_sizes"]
 
         eagle_output = self.eagle_model(**eagle_input, output_hidden_states=True, return_dict=True)

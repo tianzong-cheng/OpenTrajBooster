@@ -16,7 +16,6 @@
 import argparse
 
 import numpy as np
-
 from gr00t.eval.robot import RobotInferenceServer
 from gr00t.eval.simulation import (
     MultiStepConfig,
@@ -47,12 +46,8 @@ if __name__ == "__main__":
         default="<ENV_NAME>",  # change this to your environment name
     )
     parser.add_argument("--port", type=int, help="Port number for the server.", default=5555)
-    parser.add_argument(
-        "--host", type=str, help="Host address for the server.", default="localhost"
-    )
-    parser.add_argument(
-        "--video_dir", type=str, help="Directory to save videos.", default="./videos"
-    )
+    parser.add_argument("--host", type=str, help="Host address for the server.", default="localhost")
+    parser.add_argument("--video_dir", type=str, help="Directory to save videos.", default="./videos")
     parser.add_argument("--n_episodes", type=int, help="Number of episodes to run.", default=2)
     parser.add_argument("--n_envs", type=int, help="Number of parallel environments.", default=1)
     parser.add_argument(
@@ -61,9 +56,7 @@ if __name__ == "__main__":
         help="Number of action steps per environment step.",
         default=16,
     )
-    parser.add_argument(
-        "--max_episode_steps", type=int, help="Maximum number of steps per episode.", default=1440
-    )
+    parser.add_argument("--max_episode_steps", type=int, help="Maximum number of steps per episode.", default=1440)
     # server mode
     parser.add_argument("--server", action="store_true", help="Run the server.")
     # client mode
@@ -95,9 +88,7 @@ if __name__ == "__main__":
             n_episodes=args.n_episodes,
             n_envs=args.n_envs,
             video=VideoConfig(video_dir=args.video_dir),
-            multistep=MultiStepConfig(
-                n_action_steps=args.n_action_steps, max_episode_steps=args.max_episode_steps
-            ),
+            multistep=MultiStepConfig(n_action_steps=args.n_action_steps, max_episode_steps=args.max_episode_steps),
         )
 
         # Run the simulation

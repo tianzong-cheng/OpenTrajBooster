@@ -1,6 +1,7 @@
-import os
-import json
 import argparse
+import json
+import os
+
 
 def update_goal_in_dataset(dataset_name, task_description):
     # 获取所有以 episode_ 开头的子目录
@@ -27,6 +28,7 @@ def update_goal_in_dataset(dataset_name, task_description):
 
             except Exception as e:
                 print(f"Error processing {data_file}: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Replace goal text in dataset.")

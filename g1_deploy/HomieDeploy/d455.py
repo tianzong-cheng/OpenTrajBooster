@@ -1,9 +1,10 @@
-import pyrealsense2 as rs
-import numpy as np
-import cv2
-
 import socket
 import struct
+
+import cv2
+import numpy as np
+import pyrealsense2 as rs
+
 config = rs.config()
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
@@ -23,7 +24,7 @@ try:
         color_image = np.asanyarray(color_frame.get_data())
 
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-        result, img_encoded = cv2.imencode('.jpg', color_image, encode_param)
+        result, img_encoded = cv2.imencode(".jpg", color_image, encode_param)
         data = img_encoded.tobytes()
         data_size = len(data)
         client_socket.sendall(struct.pack(">I", data_size) + data)

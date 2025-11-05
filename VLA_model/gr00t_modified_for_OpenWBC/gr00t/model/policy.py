@@ -20,14 +20,13 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import torch
-from huggingface_hub import snapshot_download
-from huggingface_hub.errors import HFValidationError, RepositoryNotFoundError
-
 from gr00t.data.dataset import ModalityConfig
 from gr00t.data.embodiment_tags import EmbodimentTag
 from gr00t.data.schema import DatasetMetadata
 from gr00t.data.transform.base import ComposedModalityTransform
 from gr00t.model.gr00t_n1 import GR00T_N1_5
+from huggingface_hub import snapshot_download
+from huggingface_hub.errors import HFValidationError, RepositoryNotFoundError
 
 COMPUTE_DTYPE = torch.bfloat16
 
@@ -89,9 +88,7 @@ class Gr00tPolicy(BasePolicy):
             # HFValidationError, RepositoryNotFoundError
         # except (HFValidationError, RepositoryNotFoundError):
         except:
-            print(
-                f"Model not found or avail in the huggingface hub. Loading from local path: {model_path}"
-            )
+            print(f"Model not found or avail in the huggingface hub. Loading from local path: {model_path}")
 
         self._modality_config = modality_config
         self._modality_transform = modality_transform
@@ -113,9 +110,7 @@ class Gr00tPolicy(BasePolicy):
         self._load_horizons()
 
         if denoising_steps is not None:
-            if hasattr(self.model, "action_head") and hasattr(
-                self.model.action_head, "num_inference_timesteps"
-            ):
+            if hasattr(self.model, "action_head") and hasattr(self.model.action_head, "num_inference_timesteps"):
                 self.model.action_head.num_inference_timesteps = denoising_steps
                 print(f"Set action denoising steps to {denoising_steps}")
 
@@ -280,9 +275,7 @@ class Gr00tPolicy(BasePolicy):
         assert delta_indices[-1] == 0, f"{delta_indices=}"
         if len(delta_indices) > 1:
             # The step is consistent
-            assert np.all(
-                np.diff(delta_indices) == delta_indices[1] - delta_indices[0]
-            ), f"{delta_indices=}"
+            assert np.all(np.diff(delta_indices) == delta_indices[1] - delta_indices[0]), f"{delta_indices=}"
             # And the step is positive
             assert (delta_indices[1] - delta_indices[0]) > 0, f"{delta_indices=}"
 

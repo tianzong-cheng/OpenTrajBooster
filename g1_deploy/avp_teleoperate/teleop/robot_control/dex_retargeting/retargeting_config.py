@@ -1,11 +1,10 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Tuple
-from typing import Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import yaml
-import os
 
 from . import yourdfpy as urdf
 from .kinematics_adaptor import MimicJointKinematicAdaptor
@@ -141,12 +140,9 @@ class RetargetingConfig:
         return config
 
     def build(self) -> SeqRetargeting:
-        from .optimizer import (
-            VectorOptimizer,
-            PositionOptimizer,
-            DexPilotOptimizer,
-        )
         import tempfile
+
+        from .optimizer import DexPilotOptimizer, PositionOptimizer, VectorOptimizer
 
         # Process the URDF with yourdfpy to better find file path
         robot_urdf = urdf.URDF.load(

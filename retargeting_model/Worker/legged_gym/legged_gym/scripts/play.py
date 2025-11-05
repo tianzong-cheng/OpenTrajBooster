@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -28,36 +28,39 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
 
-import onnxruntime as ort
-
 import isaacgym
-from legged_gym.envs import *
-from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
-
 import numpy as np
+import onnxruntime as ort
 import torch
+from legged_gym import LEGGED_GYM_ROOT_DIR
+from legged_gym.envs import *
+from legged_gym.utils import Logger, export_policy_as_jit, get_args, task_registry
 
 
 def load_policy():
     body = torch.jit.load("", map_location="cuda:0")
+
     def policy(obs):
         action = body.forward(obs)
         return action
+
     return policy
+
 
 def load_onnx_policy():
     model = ort.InferenceSession("")
+
     def run_inference(input_tensor):
         ort_inputs = {model.get_inputs()[0].name: input_tensor.cpu().numpy()}
         ort_outs = model.run(None, ort_inputs)
         return torch.tensor(ort_outs[0], device="cuda:0")
+
     return run_inference
 
-def play(args, x_vel=0.0, y_vel=0.0, yaw_vel=0.0, height=0.74):
 
+def play(args, x_vel=0.0, y_vel=0.0, yaw_vel=0.0, height=0.74):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
     env_cfg.terrain.num_rows = 10
@@ -72,7 +75,7 @@ def play(args, x_vel=0.0, y_vel=0.0, yaw_vel=0.0, height=0.74):
     env_cfg.domain_rand.randomize_body_displacement = False
     env_cfg.commands.heading_command = False
     env_cfg.commands.use_random = False
-    env_cfg.terrain.mesh_type = 'plane'
+    env_cfg.terrain.mesh_type = "plane"
     env_cfg.asset.self_collision = 0
     env_cfg.env.upper_teleop = False
     # prepare environment
@@ -86,20 +89,20 @@ def play(args, x_vel=0.0, y_vel=0.0, yaw_vel=0.0, height=0.74):
     # load policy
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
-    policy = ppo_runner.get_inference_policy(device=env.device) # Use this to load from trained pt file
-    
+    policy = ppo_runner.get_inference_policy(device=env.device)  # Use this to load from trained pt file
+
     # policy = load_onnx_policy() # Use this to load from exported onnx file
-    
+
     if EXPORT_POLICY:
-        path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
+        path = os.path.join(LEGGED_GYM_ROOT_DIR, "logs", train_cfg.runner.experiment_name, "exported", "policies")
         export_policy_as_jit(ppo_runner.alg.actor_critic, path)
-        print('Exported policy as jit script to: ', path)
+        print("Exported policy as jit script to: ", path)
     print(policy)
     camera_position = np.array(env_cfg.viewer.pos, dtype=np.float64)
-    camera_vel = np.array([1., 1., 0.])
+    camera_vel = np.array([1.0, 1.0, 0.0])
     camera_direction = np.array(env_cfg.viewer.lookat) - np.array(env_cfg.viewer.pos)
     env.reset_idx(torch.arange(env.num_envs).to("cuda:0"))
-    for _ in range(10*int(env.max_episode_length)):
+    for _ in range(10 * int(env.max_episode_length)):
         env.action_curriculum_ratio = 1.0
         actions = policy(obs.detach())
         env.commands[:, 0] = x_vel
@@ -111,7 +114,8 @@ def play(args, x_vel=0.0, y_vel=0.0, yaw_vel=0.0, height=0.74):
             camera_position += camera_vel * env.dt
             env.set_camera(camera_position, camera_position + camera_direction)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     EXPORT_POLICY = True
     RECORD_FRAMES = False
     MOVE_CAMERA = False

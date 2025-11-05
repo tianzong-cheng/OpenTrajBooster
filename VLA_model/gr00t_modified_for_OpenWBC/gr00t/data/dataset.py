@@ -32,11 +32,10 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from gr00t.utils.video import get_all_frames, get_frames_by_timestamps
 from pydantic import BaseModel, Field, ValidationError
 from torch.utils.data import Dataset
 from tqdm import tqdm
-
-from gr00t.utils.video import get_all_frames, get_frames_by_timestamps
 
 from .embodiment_tags import EmbodimentTag
 from .schema import (
@@ -73,9 +72,7 @@ def calculate_dataset_statistics(parquet_paths: list[Path]) -> dict:
     dataset_statistics = {}
     for le_modality in all_low_dim_data.columns:
         print(f"Computing statistics for {le_modality}...")
-        np_data = np.vstack(
-            [np.asarray(x, dtype=np.float32) for x in all_low_dim_data[le_modality]]
-        )
+        np_data = np.vstack([np.asarray(x, dtype=np.float32) for x in all_low_dim_data[le_modality]])
         dataset_statistics[le_modality] = {
             "mean": np.mean(np_data, axis=0).tolist(),
             "std": np.std(np_data, axis=0).tolist(),
@@ -129,9 +126,7 @@ class LeRobotSingleDataset(Dataset):
         self.modality_configs = modality_configs
         self.video_backend = video_backend
         self.video_backend_kwargs = video_backend_kwargs if video_backend_kwargs is not None else {}
-        self.transforms = (
-            transforms if transforms is not None else ComposedModalityTransform(transforms=[])
-        )
+        self.transforms = transforms if transforms is not None else ComposedModalityTransform(transforms=[])
 
         self._dataset_path = Path(dataset_path)
         self._dataset_name = self._dataset_path.name
@@ -263,9 +258,7 @@ class LeRobotSingleDataset(Dataset):
 
         # 1. Modality metadata
         modality_meta_path = self.dataset_path / LE_ROBOT_MODALITY_FILENAME
-        assert (
-            modality_meta_path.exists()
-        ), f"Please provide a {LE_ROBOT_MODALITY_FILENAME} file in {self.dataset_path}"
+        assert modality_meta_path.exists(), f"Please provide a {LE_ROBOT_MODALITY_FILENAME} file in {self.dataset_path}"
 
         # 1.1. State and action modalities
         simplified_modality_meta: dict[str, dict] = {}
@@ -273,9 +266,7 @@ class LeRobotSingleDataset(Dataset):
             le_modality_meta = LeRobotModalityMetadata.model_validate(json.load(f))
         for modality in ["state", "action"]:
             simplified_modality_meta[modality] = {}
-            le_state_action_meta: dict[str, LeRobotStateActionMetadata] = getattr(
-                le_modality_meta, modality
-            )
+            le_state_action_meta: dict[str, LeRobotStateActionMetadata] = getattr(le_modality_meta, modality)
             for subkey in le_state_action_meta:
                 state_action_dtype = np.dtype(le_state_action_meta[subkey].dtype)
                 if np.issubdtype(state_action_dtype, np.floating):
@@ -285,17 +276,13 @@ class LeRobotSingleDataset(Dataset):
                 simplified_modality_meta[modality][subkey] = {
                     "absolute": le_state_action_meta[subkey].absolute,
                     "rotation_type": le_state_action_meta[subkey].rotation_type,
-                    "shape": [
-                        le_state_action_meta[subkey].end - le_state_action_meta[subkey].start
-                    ],
+                    "shape": [le_state_action_meta[subkey].end - le_state_action_meta[subkey].start],
                     "continuous": continuous,
                 }
 
         # 1.2. Video modalities
         le_info_path = self.dataset_path / LE_ROBOT_INFO_FILENAME
-        assert (
-            le_info_path.exists()
-        ), f"Please provide a {LE_ROBOT_INFO_FILENAME} file in {self.dataset_path}"
+        assert le_info_path.exists(), f"Please provide a {LE_ROBOT_INFO_FILENAME} file in {self.dataset_path}"
         with open(le_info_path, "r") as f:
             le_info = json.load(f)
         simplified_modality_meta["video"] = {}
@@ -415,9 +402,7 @@ class LeRobotSingleDataset(Dataset):
     def _get_lerobot_modality_meta(self) -> LeRobotModalityMetadata:
         """Get the metadata for the LeRobot dataset."""
         modality_meta_path = self.dataset_path / LE_ROBOT_MODALITY_FILENAME
-        assert (
-            modality_meta_path.exists()
-        ), f"Please provide a {LE_ROBOT_MODALITY_FILENAME} file in {self.dataset_path}"
+        assert modality_meta_path.exists(), f"Please provide a {LE_ROBOT_MODALITY_FILENAME} file in {self.dataset_path}"
         with open(modality_meta_path, "r") as f:
             modality_meta = LeRobotModalityMetadata.model_validate(json.load(f))
         return modality_meta
@@ -461,9 +446,7 @@ class LeRobotSingleDataset(Dataset):
                 try:
                     self.lerobot_modality_meta.get_key_meta(key)
                 except Exception as e:
-                    raise ValueError(
-                        ERROR_MSG_HEADER + f"Unable to find key {key} in modality metadata:\n{e}"
-                    )
+                    raise ValueError(ERROR_MSG_HEADER + f"Unable to find key {key} in modality metadata:\n{e}")
 
     def set_transforms_metadata(self, metadata: DatasetMetadata):
         """Set the metadata for the transforms. This is useful for transforms that need to know the metadata, such as the normalization values."""
@@ -560,9 +543,7 @@ class LeRobotSingleDataset(Dataset):
         """
         trajectory_indices = np.where(self.trajectory_ids == trajectory_id)[0]
         if len(trajectory_indices) != 1:
-            raise ValueError(
-                f"Error finding trajectory index for {trajectory_id}, found {trajectory_indices=}"
-            )
+            raise ValueError(f"Error finding trajectory index for {trajectory_id}, found {trajectory_indices=}")
         return trajectory_indices[0]
 
     def get_episode_chunk(self, ep_index: int) -> int:
@@ -615,11 +596,11 @@ class LeRobotSingleDataset(Dataset):
             else:
                 raise ValueError(f"Invalid padding strategy: {padding_strategy}")
         return output
-    
+
     def get_video_path(self, trajectory_id: int, key: str) -> Path:
         # 获取 episode_chunk
         chunk_index = self.get_episode_chunk(trajectory_id)
-        
+
         # 安全获取 original_key
         original_key = getattr(self.lerobot_modality_meta.video[key], "original_key", None)
         if original_key is None:
@@ -629,7 +610,7 @@ class LeRobotSingleDataset(Dataset):
         if isinstance(self.video_path_pattern, dict):
             # 先尝试直接用 original_key
             video_template = self.video_path_pattern.get(original_key)
-            
+
             # 如果没匹配上，尝试取扩展名匹配
             if video_template is None and "." in original_key:
                 ext_key = original_key.split(".")[-1]
@@ -637,28 +618,23 @@ class LeRobotSingleDataset(Dataset):
 
             if video_template is None:
                 raise KeyError(
-                    f"Invalid video_key '{original_key}' not found in video_path_pattern keys: {list(self.video_path_pattern.keys())}"
+                    f"Invalid video_key '{original_key}' not found in video_path_pattern keys:"
+                    f" {list(self.video_path_pattern.keys())}"
                 )
-            
+
             # 格式化路径（字典模板不需要 video_key）
-            video_filename = video_template.format(
-                episode_chunk=chunk_index,
-                episode_index=trajectory_id
-            )
-        
+            video_filename = video_template.format(episode_chunk=chunk_index, episode_index=trajectory_id)
+
         elif isinstance(self.video_path_pattern, str):
             # 字符串模板直接带 video_key
             video_filename = self.video_path_pattern.format(
-                episode_chunk=chunk_index,
-                episode_index=trajectory_id,
-                video_key=original_key
+                episode_chunk=chunk_index, episode_index=trajectory_id, video_key=original_key
             )
-        
+
         else:
             raise TypeError("video_path_pattern must be either a string or a dict.")
 
         return self.dataset_path / video_filename
-
 
     # def get_video_path(self, trajectory_id: int, key: str) -> Path:
     #     chunk_index = self.get_episode_chunk(trajectory_id)
@@ -800,9 +776,7 @@ class LeRobotSingleDataset(Dataset):
         step_indices = np.minimum(step_indices, max_length - 1)
         # Get the annotations
         task_indices: list[int] = []
-        assert key.startswith(
-            "annotation."
-        ), f"Language key must start with 'annotation.', got {key}"
+        assert key.startswith("annotation."), f"Language key must start with 'annotation.', got {key}"
         subkey = key.replace("annotation.", "")
         annotation_meta = self.lerobot_modality_meta.annotation
         assert annotation_meta is not None, f"Annotation metadata is None for {subkey}"
@@ -951,7 +925,10 @@ class MixtureSpecElement(BaseModel):
     dataset_weight: float = Field(..., description="The weight of the dataset in the mixture.")
     distribute_weights: bool = Field(
         default=False,
-        description="Whether to distribute the weights of the dataset across all the paths. If True, the weights will be evenly distributed across all the paths.",
+        description=(
+            "Whether to distribute the weights of the dataset across all the paths. If True, the weights will be evenly"
+            " distributed across all the paths."
+        ),
     )
 
 
@@ -1016,9 +993,7 @@ class LeRobotMixtureDataset(Dataset):
         # 4. Primary dataset indices
         self._primary_dataset_indices = np.array(dataset_sampling_weights) == 1.0
         if not np.any(self._primary_dataset_indices):
-            raise ValueError(
-                "No primary dataset found, please at least set one dataset's weight to 1.0"
-            )
+            raise ValueError("No primary dataset found, please at least set one dataset's weight to 1.0")
 
         # Set the epoch and sample the first epoch
         self.set_epoch(0)
@@ -1077,9 +1052,7 @@ class LeRobotMixtureDataset(Dataset):
         dataset = self.datasets[dataset_index]
 
         # Sample trajectory
-        trajectory_index = rng.choice(
-            len(dataset.trajectory_ids), p=self.trajectory_sampling_weights[dataset_index]
-        )
+        trajectory_index = rng.choice(len(dataset.trajectory_ids), p=self.trajectory_sampling_weights[dataset_index])
         trajectory_id = dataset.trajectory_ids[trajectory_index]
 
         # Sample step
@@ -1104,11 +1077,7 @@ class LeRobotMixtureDataset(Dataset):
         Returns:
             int: The length of a single epoch in the mixture.
         """
-        return int(
-            (self.dataset_lengths / self.dataset_sampling_weights)[
-                self.primary_dataset_indices
-            ].max()
-        )
+        return int((self.dataset_lengths / self.dataset_sampling_weights)[self.primary_dataset_indices].max())
 
     @staticmethod
     def compute_overall_statistics(
@@ -1260,9 +1229,7 @@ class LeRobotMixtureDataset(Dataset):
         merged_metadata["modalities"] = {}
         for modality, configs in modality_configs.items():
             # Check that all modality configs correspond to the same tag matches
-            assert (
-                len(configs) == 1
-            ), f"Multiple modality configs for modality {modality}: {list(configs)}"
+            assert len(configs) == 1, f"Multiple modality configs for modality {modality}: {list(configs)}"
             merged_metadata["modalities"][modality] = json.loads(configs.pop())
 
         return DatasetMetadata.model_validate(merged_metadata)

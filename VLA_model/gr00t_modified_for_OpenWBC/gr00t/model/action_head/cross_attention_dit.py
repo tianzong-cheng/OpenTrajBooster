@@ -108,9 +108,7 @@ class BasicTransformerBlock(nn.Module):
             )
 
         if positional_embeddings == "sinusoidal":
-            self.pos_embed = SinusoidalPositionalEmbedding(
-                dim, max_seq_length=num_positional_embeddings
-            )
+            self.pos_embed = SinusoidalPositionalEmbedding(dim, max_seq_length=num_positional_embeddings)
         else:
             self.pos_embed = None
 
@@ -220,13 +218,10 @@ class DiT(ModelMixin, ConfigMixin):
         self.gradient_checkpointing = False
 
         # Timestep encoder
-        self.timestep_encoder = TimestepEncoder(
-            embedding_dim=self.inner_dim, compute_dtype=self.config.compute_dtype
-        )
+        self.timestep_encoder = TimestepEncoder(embedding_dim=self.inner_dim, compute_dtype=self.config.compute_dtype)
 
         all_blocks = []
         for idx in range(self.config.num_layers):
-
             use_self_attn = idx % 2 == 1 and interleave_self_attention
             curr_cross_attention_dim = cross_attention_dim if not use_self_attn else None
 

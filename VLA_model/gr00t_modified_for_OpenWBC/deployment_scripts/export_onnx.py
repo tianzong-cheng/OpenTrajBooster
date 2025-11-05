@@ -20,6 +20,10 @@ from typing import Dict, Optional
 import numpy as np
 import torch
 import torch.utils.checkpoint as cp
+from gr00t.data.dataset import LeRobotSingleDataset
+from gr00t.experiment.data_config import DATA_CONFIG_MAP
+from gr00t.model.backbone.eagle_backbone import DEFAULT_EAGLE_PATH, EagleBackbone
+from gr00t.model.policy import Gr00tPolicy, unsqueeze_dict_values
 from transformers import AutoConfig
 from transformers.models.qwen3.modeling_qwen3 import Qwen3ForCausalLM
 from transformers.models.siglip.configuration_siglip import SiglipVisionConfig
@@ -27,11 +31,6 @@ from transformers.models.siglip.modeling_siglip import (
     SiglipVisionEmbeddings,
     SiglipVisionTransformer,
 )
-
-from gr00t.data.dataset import LeRobotSingleDataset
-from gr00t.experiment.data_config import DATA_CONFIG_MAP
-from gr00t.model.backbone.eagle_backbone import DEFAULT_EAGLE_PATH, EagleBackbone
-from gr00t.model.policy import Gr00tPolicy, unsqueeze_dict_values
 
 
 def get_input_info(policy, observations):
@@ -59,9 +58,7 @@ def export_eagle2_vit(vision_model, output_dir):
         ) -> torch.Tensor:
             _, _, height, width = pixel_values.shape
             target_dtype = self.patch_embedding.weight.dtype
-            patch_embeds = self.patch_embedding(
-                pixel_values.to(dtype=target_dtype)
-            )  # shape = [*, width, grid, grid]
+            patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
             embeddings = patch_embeds.flatten(2).transpose(1, 2)
 
             if interpolate_pos_encoding:
@@ -84,15 +81,9 @@ def export_eagle2_vit(vision_model, output_dir):
             output_hidden_states: Optional[bool] = None,
             interpolate_pos_encoding: Optional[bool] = False,
         ):
-            output_attentions = (
-                output_attentions
-                if output_attentions is not None
-                else self.config.output_attentions
-            )
+            output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
             output_hidden_states = (
-                output_hidden_states
-                if output_hidden_states is not None
-                else self.config.output_hidden_states
+                output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
             )
 
             hidden_states = self.embeddings(
@@ -252,9 +243,7 @@ class VLLN_VLSelfAttention(torch.nn.Module):
 
 def export_action_head(policy, ONNX_export_path, input_state, attention_mask):
     process_backbone_model = (
-        VLLN_VLSelfAttention(
-            policy.model.action_head.vlln, policy.model.action_head.vl_self_attention
-        )
+        VLLN_VLSelfAttention(policy.model.action_head.vlln, policy.model.action_head.vl_self_attention)
         .to(torch.float16)
         .cuda()
     )
@@ -279,9 +268,7 @@ def export_action_head(policy, ONNX_export_path, input_state, attention_mask):
 
     state_encoder = policy.model.action_head.state_encoder.to(torch.float16)
 
-    state_tensor = torch.randn(
-        (1, input_state.shape[1], input_state.shape[2]), dtype=torch.float16
-    ).cuda()
+    state_tensor = torch.randn((1, input_state.shape[1], input_state.shape[2]), dtype=torch.float16).cuda()
     embodiment_id_tensor = torch.ones((1), dtype=torch.int64).cuda()
 
     torch.onnx.export(
@@ -422,9 +409,7 @@ def run_groot_inference(
     os.makedirs(os.path.join(onnx_model_path, "action_head"), exist_ok=True)
 
     export_eagle2_vit(policy.model.backbone.eagle_model.vision_model.vision_model, onnx_model_path)
-    export_eagle2_llm(
-        policy.model.backbone, policy.model.config.backbone_cfg, onnx_model_path, attention_mask
-    )
+    export_eagle2_llm(policy.model.backbone, policy.model.config.backbone_cfg, onnx_model_path, attention_mask)
     export_action_head(policy, onnx_model_path, state, attention_mask)
 
     return predicted_action

@@ -13,7 +13,7 @@ import numpy as np
 import six
 import trimesh
 import trimesh.transformations as tra
-from anytree import Node, LevelOrderIter
+from anytree import LevelOrderIter, Node
 from lxml import etree
 
 _logger = logging.getLogger(__name__)
@@ -817,7 +817,8 @@ class URDF:
         if collision_geometry:
             if self._scene_collision is None:
                 raise ValueError(
-                    "No collision scene available. Use build_collision_scene_graph=True and load_collision_meshes=True during loading."
+                    "No collision scene available. Use build_collision_scene_graph=True and load_collision_meshes=True"
+                    " during loading."
                 )
             else:
                 self._scene_collision.show(callback=callback)
@@ -826,7 +827,8 @@ class URDF:
                 raise ValueError("No scene available. Use build_scene_graph=True and load_meshes=True during loading.")
             elif len(self._scene.bounds_corners) < 1:
                 raise ValueError(
-                    "Scene is empty, maybe meshes failed to load? Use build_scene_graph=True and load_meshes=True during loading."
+                    "Scene is empty, maybe meshes failed to load? Use build_scene_graph=True and load_meshes=True"
+                    " during loading."
                 )
             else:
                 self._scene.show(callback=callback)
@@ -1005,7 +1007,8 @@ class URDF:
                 q = self._cfg[mimic_joint_index] * joint.mimic.multiplier + joint.mimic.offset
             else:
                 _logger.warning(
-                    f"Joint '{joint.name}' is supposed to mimic '{joint.mimic.joint}'. But this joint is not actuated - will assume (0.0 + offset)."
+                    f"Joint '{joint.name}' is supposed to mimic '{joint.mimic.joint}'. But this joint is not actuated -"
+                    " will assume (0.0 + offset)."
                 )
                 q = 0.0 + joint.mimic.offset
 
@@ -1052,7 +1055,8 @@ class URDF:
                     joint_cfg.append((joint, value))
             else:
                 raise ValueError(
-                    f"Dimensionality of configuration ({len(configuration)}) doesn't match number of all ({len(self.robot.joints)}) or actuated joints ({self.num_actuated_joints})."
+                    f"Dimensionality of configuration ({len(configuration)}) doesn't match number of all"
+                    f" ({len(self.robot.joints)}) or actuated joints ({self.num_actuated_joints})."
                 )
         else:
             raise TypeError("Invalid type for configuration")
@@ -1629,7 +1633,8 @@ class URDF:
         elif num_nones > 1:
             self._errors.append(
                 URDFError(
-                    "Too many of <sphere>, <cylinder>, <box>, <mesh> defined as a child of <geometry>. Only one allowed."
+                    "Too many of <sphere>, <cylinder>, <box>, <mesh> defined as a child of <geometry>. Only one"
+                    " allowed."
                 )
             )
 
@@ -2028,7 +2033,10 @@ class URDF:
         ]
         self._validate_required_attribute(
             attribute=joint.type,
-            error_msg=f"The <joint> tag misses a 'type' attribute or value is not part of allowed values [{', '.join(allowed_types)}].",
+            error_msg=(
+                "The <joint> tag misses a 'type' attribute or value is not part of allowed values"
+                f" [{', '.join(allowed_types)}]."
+            ),
             allowed_values=allowed_types,
         )
 
@@ -2170,7 +2178,8 @@ class URDF:
                     joint_cfg.append((joint, value))
             else:
                 raise ValueError(
-                    f"Dimensionality of configuration ({len(configuration)}) doesn't match number of all ({len(self.robot.joints)}) or actuated joints ({self.num_actuated_joints})."
+                    f"Dimensionality of configuration ({len(configuration)}) doesn't match number of all"
+                    f" ({len(self.robot.joints)}) or actuated joints ({self.num_actuated_joints})."
                 )
         else:
             raise TypeError("Invalid type for configuration")

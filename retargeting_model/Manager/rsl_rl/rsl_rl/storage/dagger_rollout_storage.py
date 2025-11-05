@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -28,8 +28,9 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import torch
 import numpy as np
+import torch
+
 
 class DaggerRolloutStorage:
     def __init__(self):
@@ -42,13 +43,13 @@ class DaggerRolloutStorage:
         self.actor_obs_list.append(observations.cpu())
         self.gt_actions_list.append(gt_actions.cpu())
 
-    def get_dagger_generator(self, num_mini_batches, num_learning_epochs, device='cuda'):
+    def get_dagger_generator(self, num_mini_batches, num_learning_epochs, device="cuda"):
         # 组合成大 tensor，在 CPU 上
         actor_obs = torch.cat(self.actor_obs_list, dim=0)
         gt_actions = torch.cat(self.gt_actions_list, dim=0)
 
         total_size = actor_obs.shape[0]
-        batch_size = 256*50
+        batch_size = 256 * 50
 
         for _ in range(num_learning_epochs):
             indices = torch.randperm(total_size)
@@ -57,10 +58,7 @@ class DaggerRolloutStorage:
                 batch_inds = indices[start:end]
 
                 # 注意：这里只在这一批上传到 GPU
-                yield (
-                    actor_obs[batch_inds].to(device),
-                    gt_actions[batch_inds].to(device)
-                )
+                yield (actor_obs[batch_inds].to(device), gt_actions[batch_inds].to(device))
 
     def clear(self):
         self.actor_obs_list.clear()

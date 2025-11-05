@@ -90,9 +90,7 @@ class Eagle2_5_VLForConditionalGeneration(Eagle2_5_VLPreTrainedModel, Generation
         patch_size = config.vision_config.patch_size
         self.patch_size = patch_size
         if config.use_pixel_shuffle:
-            self.num_image_token = int(
-                (image_size // patch_size) ** 2 * (config.downsample_ratio**2)
-            )
+            self.num_image_token = int((image_size // patch_size) ** 2 * (config.downsample_ratio**2))
         else:
             self.num_image_token = int((image_size // patch_size) ** 2)
 
@@ -131,9 +129,7 @@ class Eagle2_5_VLForConditionalGeneration(Eagle2_5_VLPreTrainedModel, Generation
             elif config.text_config.architectures[0] == "Qwen3ForCausalLM":
                 self.language_model = Qwen3ForCausalLM(config.text_config)
             else:
-                raise NotImplementedError(
-                    f"{config.text_config.architectures[0]} is not implemented."
-                )
+                raise NotImplementedError(f"{config.text_config.architectures[0]} is not implemented.")
 
         vit_hidden_size = config.vision_config.hidden_size
         llm_hidden_size = config.text_config.hidden_size
@@ -160,9 +156,7 @@ class Eagle2_5_VLForConditionalGeneration(Eagle2_5_VLPreTrainedModel, Generation
         self.neftune_alpha = None
 
         if config.use_backbone_lora:
-            self.wrap_backbone_lora(
-                r=config.use_backbone_lora, lora_alpha=2 * config.use_backbone_lora
-            )
+            self.wrap_backbone_lora(r=config.use_backbone_lora, lora_alpha=2 * config.use_backbone_lora)
 
         self.use_llm_lora = config.use_llm_lora
         if config.use_llm_lora:
@@ -301,18 +295,14 @@ class Eagle2_5_VLForConditionalGeneration(Eagle2_5_VLPreTrainedModel, Generation
         # N, W, H * scale, C // scale --> N, H * scale, W, C // scale
         x = x.permute(0, 2, 1, 3).contiguous()
         # N, H * scale, W, C // scale --> N, H * scale, W * scale, C // (scale ** 2)
-        x = x.view(
-            n, int(h * scale_factor), int(w * scale_factor), int(c / (scale_factor * scale_factor))
-        )
+        x = x.view(n, int(h * scale_factor), int(w * scale_factor), int(c / (scale_factor * scale_factor)))
 
         x = x.permute(0, 2, 1, 3).contiguous()
         return x
 
     def extract_feature(self, pixel_values):
         if self.select_layer == -1:
-            vit_embeds = self.vision_model(
-                pixel_values=pixel_values, output_hidden_states=False, return_dict=True
-            )
+            vit_embeds = self.vision_model(pixel_values=pixel_values, output_hidden_states=False, return_dict=True)
             if hasattr(vit_embeds, "last_hidden_state"):
                 vit_embeds = vit_embeds.last_hidden_state
 

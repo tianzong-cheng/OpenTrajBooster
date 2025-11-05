@@ -9,12 +9,13 @@ except ImportError:
     from io import BytesIO
 import struct
 
+
 class pd_tau_targets_lcmt(object):
     __slots__ = ["q_des", "tau_ff", "timestamp_us"]
 
     def __init__(self):
-        self.q_des = [ 0.0 for dim0 in range(29) ]
-        self.tau_ff = [ 0.0 for dim0 in range(29) ]
+        self.q_des = [0.0 for dim0 in range(29)]
+        self.tau_ff = [0.0 for dim0 in range(29)]
         self.timestamp_us = 0
 
     def encode(self):
@@ -24,34 +25,39 @@ class pd_tau_targets_lcmt(object):
         return buf.getvalue()
 
     def _encode_one(self, buf):
-        buf.write(struct.pack('>29d', *self.q_des[:29]))
-        buf.write(struct.pack('>29d', *self.tau_ff[:29]))
+        buf.write(struct.pack(">29d", *self.q_des[:29]))
+        buf.write(struct.pack(">29d", *self.tau_ff[:29]))
         buf.write(struct.pack(">q", self.timestamp_us))
 
     def decode(data):
-        if hasattr(data, 'read'):
+        if hasattr(data, "read"):
             buf = data
         else:
             buf = BytesIO(data)
         if buf.read(8) != pd_tau_targets_lcmt._get_packed_fingerprint():
             raise ValueError("Decode error")
         return pd_tau_targets_lcmt._decode_one(buf)
+
     decode = staticmethod(decode)
 
     def _decode_one(buf):
         self = pd_tau_targets_lcmt()
-        self.q_des = struct.unpack('>29d', buf.read(232))
-        self.tau_ff = struct.unpack('>29d', buf.read(232))
+        self.q_des = struct.unpack(">29d", buf.read(232))
+        self.tau_ff = struct.unpack(">29d", buf.read(232))
         self.timestamp_us = struct.unpack(">q", buf.read(8))[0]
         return self
+
     _decode_one = staticmethod(_decode_one)
 
     _hash = None
+
     def _get_hash_recursive(parents):
-        if pd_tau_targets_lcmt in parents: return 0
-        tmphash = (0xc36d9a4a18ca6110) & 0xffffffffffffffff
-        tmphash  = (((tmphash<<1)&0xffffffffffffffff)  + (tmphash>>63)) & 0xffffffffffffffff
+        if pd_tau_targets_lcmt in parents:
+            return 0
+        tmphash = (0xC36D9A4A18CA6110) & 0xFFFFFFFFFFFFFFFF
+        tmphash = (((tmphash << 1) & 0xFFFFFFFFFFFFFFFF) + (tmphash >> 63)) & 0xFFFFFFFFFFFFFFFF
         return tmphash
+
     _get_hash_recursive = staticmethod(_get_hash_recursive)
     _packed_fingerprint = None
 
@@ -59,5 +65,5 @@ class pd_tau_targets_lcmt(object):
         if pd_tau_targets_lcmt._packed_fingerprint is None:
             pd_tau_targets_lcmt._packed_fingerprint = struct.pack(">Q", pd_tau_targets_lcmt._get_hash_recursive([]))
         return pd_tau_targets_lcmt._packed_fingerprint
-    _get_packed_fingerprint = staticmethod(_get_packed_fingerprint)
 
+    _get_packed_fingerprint = staticmethod(_get_packed_fingerprint)

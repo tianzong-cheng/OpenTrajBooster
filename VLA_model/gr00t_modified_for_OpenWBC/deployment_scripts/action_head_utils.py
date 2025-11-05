@@ -18,7 +18,6 @@ from transformers.feature_extraction_utils import BatchFeature
 
 
 def action_head_pytorch_forward(self, backbone_output, action_input):
-
     backbone_output = self.process_backbone_output(backbone_output)
     # Get vision and language embeddings.
     vl_embeds = backbone_output.backbone_features

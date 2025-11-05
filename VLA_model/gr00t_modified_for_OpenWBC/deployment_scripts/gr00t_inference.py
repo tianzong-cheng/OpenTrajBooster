@@ -17,14 +17,13 @@ import argparse
 import os
 from functools import partial
 
+import gr00t
 import torch
 from action_head_utils import action_head_pytorch_forward
-from trt_model_forward import setup_tensorrt_engines
-
-import gr00t
 from gr00t.data.dataset import LeRobotSingleDataset
 from gr00t.experiment.data_config import DATA_CONFIG_MAP
 from gr00t.model.policy import Gr00tPolicy
+from trt_model_forward import setup_tensorrt_engines
 
 
 def compare_predictions(pred_tensorrt, pred_torch):
@@ -93,15 +92,16 @@ def compare_predictions(pred_tensorrt, pred_torch):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GR00T inference")
-    parser.add_argument(
-        "--model_path", type=str, default="nvidia/GR00T-N1.5-3B", help="Path to the GR00T model"
-    )
+    parser.add_argument("--model_path", type=str, default="nvidia/GR00T-N1.5-3B", help="Path to the GR00T model")
     parser.add_argument(
         "--inference_mode",
         type=str,
         choices=["pytorch", "tensorrt", "compare"],
         default="pytorch",
-        help="Inference mode: 'pytorch' for PyTorch inference, 'tensorrt' for TensorRT inference, 'compare' for compare PyTorch and TensorRT outputs similarity",
+        help=(
+            "Inference mode: 'pytorch' for PyTorch inference, 'tensorrt' for TensorRT inference, 'compare' for compare"
+            " PyTorch and TensorRT outputs similarity"
+        ),
     )
     parser.add_argument(
         "--denoising_steps",
@@ -173,9 +173,7 @@ if __name__ == "__main__":
                 device=device,
             )
         # PyTorch inference
-        policy.model.action_head.get_action = partial(
-            action_head_pytorch_forward, policy.model.action_head
-        )
+        policy.model.action_head.get_action = partial(action_head_pytorch_forward, policy.model.action_head)
         predicted_action_torch = policy.get_action(step_data)
 
         # Setup TensorRT engines and run inference

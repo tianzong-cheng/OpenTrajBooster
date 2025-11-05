@@ -24,8 +24,6 @@ import numpy as np
 # Required for robocasa environments
 import robocasa  # noqa: F401
 import robosuite  # noqa: F401
-from robocasa.utils.gym_utils import GrootRoboCasaEnv  # noqa: F401
-
 from gr00t.data.dataset import ModalityConfig
 from gr00t.eval.service import BaseInferenceClient
 from gr00t.eval.wrappers.multistep_wrapper import MultiStepWrapper
@@ -34,6 +32,7 @@ from gr00t.eval.wrappers.video_recording_wrapper import (
     VideoRecordingWrapper,
 )
 from gr00t.model.policy import BasePolicy
+from robocasa.utils.gym_utils import GrootRoboCasaEnv  # noqa: F401
 
 # from gymnasium.envs.registration import registry
 
@@ -90,9 +89,7 @@ class SimulationInferenceClient(BaseInferenceClient, BasePolicy):
         # NOTE(YL)!
         # hot fix to change the video.ego_view_bg_crop_pad_res256_freq20 to video.ego_view
         if "video.ego_view_bg_crop_pad_res256_freq20" in observations:
-            observations["video.ego_view"] = observations.pop(
-                "video.ego_view_bg_crop_pad_res256_freq20"
-            )
+            observations["video.ego_view"] = observations.pop("video.ego_view_bg_crop_pad_res256_freq20")
         return self.call_endpoint("get_action", observations)
 
     def get_modality_config(self) -> Dict[str, ModalityConfig]:
@@ -116,9 +113,7 @@ class SimulationInferenceClient(BaseInferenceClient, BasePolicy):
     def run_simulation(self, config: SimulationConfig) -> Tuple[str, List[bool]]:
         """Run the simulation for the specified number of episodes."""
         start_time = time.time()
-        print(
-            f"Running {config.n_episodes} episodes for {config.env_name} with {config.n_envs} environments"
-        )
+        print(f"Running {config.n_episodes} episodes for {config.env_name} with {config.n_envs} environments")
         # Set up the environment
         self.env = self.setup_environment(config)
         # Initialize tracking variables
@@ -155,9 +150,7 @@ class SimulationInferenceClient(BaseInferenceClient, BasePolicy):
         self.env.reset()
         self.env.close()
         self.env = None
-        print(
-            f"Collecting {config.n_episodes} episodes took {time.time() - start_time:.2f} seconds"
-        )
+        print(f"Collecting {config.n_episodes} episodes took {time.time() - start_time:.2f} seconds")
         assert (
             len(episode_successes) >= config.n_episodes
         ), f"Expected at least {config.n_episodes} episodes, got {len(episode_successes)}"
@@ -237,9 +230,7 @@ def run_evaluation(
         n_episodes=n_episodes,
         n_envs=n_envs,
         video=VideoConfig(video_dir=video_dir),
-        multistep=MultiStepConfig(
-            n_action_steps=n_action_steps, max_episode_steps=max_episode_steps
-        ),
+        multistep=MultiStepConfig(n_action_steps=n_action_steps, max_episode_steps=max_episode_steps),
     )
     # Create client and run simulation
     client = SimulationInferenceClient(host=host, port=port)

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -29,11 +29,10 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 import numpy as np
-
 import torch
 import torch.nn as nn
-from torch.distributions import Normal
 from rsl_rl.modules.reach_estimator import ReachEstimator
+from torch.distributions import Normal
 
 
 def get_activation(act_name):
@@ -54,7 +53,8 @@ def get_activation(act_name):
     else:
         print("invalid activation function!")
         return None
-    
+
+
 class RunningMeanStd:
     # Dynamically calculate mean and std
     def __init__(self, shape, device):  # shape:the dimension of input data
@@ -78,34 +78,43 @@ class RunningMeanStd:
         self.var = M2 / tot_count
         self.n = tot_count
 
+
 class Normalization:
-    def __init__(self, shape, device='cuda:0'):
+    def __init__(self, shape, device="cuda:0"):
         self.running_ms = RunningMeanStd(shape=shape, device=device)
 
     def __call__(self, x, update=False):
         # Whether to update the mean and std,during the evaluating,update=Flase
-        if update:  
+        if update:
             self.running_ms.update(x)
         x = (x - self.running_ms.mean) / (torch.sqrt(self.running_ms.var) + 1e-4)
 
         return x
 
+
 class ReachActorCritic(nn.Module):
     is_recurrent = False
-    def __init__(self,  num_actor_obs,
-                        num_critic_obs,
-                        num_one_step_obs,
-                        num_one_step_critic_obs,
-                        actor_history_length,
-                        critic_history_length,
-                        num_actions=19,
-                        actor_hidden_dims=[512, 256, 128],
-                        critic_hidden_dims=[512, 256, 128],
-                        activation='elu',
-                        init_noise_std=1.0,
-                        **kwargs):
+
+    def __init__(
+        self,
+        num_actor_obs,
+        num_critic_obs,
+        num_one_step_obs,
+        num_one_step_critic_obs,
+        actor_history_length,
+        critic_history_length,
+        num_actions=19,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+        init_noise_std=1.0,
+        **kwargs,
+    ):
         if kwargs:
-            print("ActorCritic.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
+            print(
+                "ActorCritic.__init__ got unexpected arguments, which will be ignored: "
+                + str([key for key in kwargs.keys()])
+            )
         super(ReachActorCritic, self).__init__()
 
         activation = get_activation(activation)
@@ -130,10 +139,15 @@ class ReachActorCritic(nn.Module):
         else:
             mlp_input_dim_a = self.num_one_step_obs + 3 + self.dynamic_latent_dim
         mlp_input_dim_c = num_critic_obs
-        
+
         # Estimator
-        self.estimator = ReachEstimator(temporal_steps=self.actor_history_length, num_one_step_obs=self.num_one_step_obs, num_height_points=0, latent_dim=self.dynamic_latent_dim)
-        
+        self.estimator = ReachEstimator(
+            temporal_steps=self.actor_history_length,
+            num_one_step_obs=self.num_one_step_obs,
+            num_height_points=0,
+            latent_dim=self.dynamic_latent_dim,
+        )
+
         # Terrain Encoder
         if self.actor_use_height:
             self.terrain_encoder = nn.Sequential(
@@ -150,7 +164,7 @@ class ReachActorCritic(nn.Module):
         actor_layers.append(activation)
         for l in range(len(actor_hidden_dims)):
             if l == len(actor_hidden_dims) - 1:
-                actor_layers.append(nn.Linear(actor_hidden_dims[l], self.policy_output_dim ))
+                actor_layers.append(nn.Linear(actor_hidden_dims[l], self.policy_output_dim))
                 # actor_layers.append(nn.Tanh())
             else:
                 actor_layers.append(nn.Linear(actor_hidden_dims[l], actor_hidden_dims[l + 1]))
@@ -206,10 +220,9 @@ class ReachActorCritic(nn.Module):
 
         print(f"Actor MLP: {self.actor}")
         print(f"Critic MLP: {self.critic}")
-        print(f'Estimator: {self.estimator.encoder}')
+        print(f"Estimator: {self.estimator.encoder}")
         if self.actor_use_height:
-            print(f'Terrain Encoder: {self.terrain_encoder}')
-        
+            print(f"Terrain Encoder: {self.terrain_encoder}")
 
         # Action noise
         # self.std = nn.Parameter(init_noise_std * torch.ones(self.policy_output_dim))
@@ -222,16 +235,17 @@ class ReachActorCritic(nn.Module):
     @staticmethod
     # not used at the moment
     def init_weights(sequential, scales):
-        [torch.nn.init.orthogonal_(module.weight, gain=scales[idx]) for idx, module in
-         enumerate(mod for mod in sequential if isinstance(mod, nn.Linear))]
-
+        [
+            torch.nn.init.orthogonal_(module.weight, gain=scales[idx])
+            for idx, module in enumerate(mod for mod in sequential if isinstance(mod, nn.Linear))
+        ]
 
     def reset(self, dones=None):
         pass
 
     def forward(self):
         raise NotImplementedError
-    
+
     @property
     def action_mean(self):
         return self.distribution.mean
@@ -239,7 +253,7 @@ class ReachActorCritic(nn.Module):
     @property
     def action_std(self):
         return self.distribution.stddev
-    
+
     @property
     def entropy(self):
         return self.distribution.entropy().sum(dim=-1)
@@ -257,36 +271,56 @@ class ReachActorCritic(nn.Module):
 
     def update_distribution(self, obs_history):
         with torch.no_grad():
-            vel, dynamic_latent = self.estimator(obs_history[:, 0:self.actor_proprioceptive_obs_length])
+            vel, dynamic_latent = self.estimator(obs_history[:, 0 : self.actor_proprioceptive_obs_length])
         if self.actor_use_height:
-            terrain_latent = self.terrain_encoder(obs_history[:,-(self.num_height_points + self.num_one_step_obs):])
-            actor_input = torch.cat((obs_history[:,-(self.num_height_points + self.num_one_step_obs):-self.num_height_points], vel, dynamic_latent, terrain_latent), dim=-1)
+            terrain_latent = self.terrain_encoder(obs_history[:, -(self.num_height_points + self.num_one_step_obs) :])
+            actor_input = torch.cat(
+                (
+                    obs_history[:, -(self.num_height_points + self.num_one_step_obs) : -self.num_height_points],
+                    vel,
+                    dynamic_latent,
+                    terrain_latent,
+                ),
+                dim=-1,
+            )
         else:
-            actor_input = torch.cat((obs_history[:,-self.num_one_step_obs:], vel, dynamic_latent), dim=-1)
+            actor_input = torch.cat((obs_history[:, -self.num_one_step_obs :], vel, dynamic_latent), dim=-1)
         action_mean = self.actor(actor_input)
         self.distribution = Normal(action_mean, torch.exp(self.std))
 
     def act(self, obs_history=None, **kwargs):
         self.update_distribution(obs_history)
         return self.distribution.sample()
-    
+
     def get_actions_log_prob(self, actions):
         return self.distribution.log_prob(actions).sum(dim=-1)
 
     def act_inference(self, obs_history, observations=None):
         with torch.no_grad():
-            vel, dynamic_latent = self.estimator(obs_history[:, 0:self.actor_proprioceptive_obs_length])
+            vel, dynamic_latent = self.estimator(obs_history[:, 0 : self.actor_proprioceptive_obs_length])
         if self.actor_use_height:
-            terrain_latent = self.terrain_encoder(obs_history[:,-(self.num_height_points + self.num_one_step_obs):])
-            actor_input = torch.cat((obs_history[:,-(self.num_height_points + self.num_one_step_obs):-self.num_height_points], vel, dynamic_latent, terrain_latent), dim=-1)
+            terrain_latent = self.terrain_encoder(obs_history[:, -(self.num_height_points + self.num_one_step_obs) :])
+            actor_input = torch.cat(
+                (
+                    obs_history[:, -(self.num_height_points + self.num_one_step_obs) : -self.num_height_points],
+                    vel,
+                    dynamic_latent,
+                    terrain_latent,
+                ),
+                dim=-1,
+            )
         else:
-            actor_input = torch.cat((obs_history[:,-self.num_one_step_obs:], vel, dynamic_latent), dim=-1)
+            actor_input = torch.cat((obs_history[:, -self.num_one_step_obs :], vel, dynamic_latent), dim=-1)
         action_mean = self.actor(actor_input)
         return action_mean
 
     def evaluate(self, critic_observations, **kwargs):
         value = self.critic(critic_observations)
         return value
-    
+
     def update_estimator(self, obs_history, next_critic_obs, lr=None):
-        return self.estimator.update(obs_history[:, 0:self.actor_proprioceptive_obs_length], next_critic_obs[:, 0:self.critic_proprioceptive_obs_length], lr)
+        return self.estimator.update(
+            obs_history[:, 0 : self.actor_proprioceptive_obs_length],
+            next_critic_obs[:, 0 : self.critic_proprioceptive_obs_length],
+            lr,
+        )

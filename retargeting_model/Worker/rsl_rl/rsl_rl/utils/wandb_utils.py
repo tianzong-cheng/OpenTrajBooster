@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict
-from torch.utils.tensorboard import SummaryWriter
+
 from legged_gym.utils.helpers import class_to_dict
+from torch.utils.tensorboard import SummaryWriter
 
 try:
     import wandb
@@ -26,7 +27,7 @@ class WandbSummaryWriter(SummaryWriter):
             raise KeyError("Please specify wandb_project in the runner config, e.g. legged_gym.")
 
         try:
-            entity = cfg['wandb_user']
+            entity = cfg["wandb_user"]
         except KeyError:
             raise KeyError(
                 "Wandb username not found. Please run or add to ~/.bashrc: export WANDB_USERNAME=YOUR_USERNAME"
@@ -64,11 +65,11 @@ class WandbSummaryWriter(SummaryWriter):
         super().add_scalar(
             tag,
             scalar_value,
-            global_step=global_step+1,
+            global_step=global_step + 1,
             walltime=walltime,
             new_style=new_style,
         )
-        wandb.log({self._map_path(tag): scalar_value}, step=global_step+1)
+        wandb.log({self._map_path(tag): scalar_value}, step=global_step + 1)
 
     def stop(self):
         wandb.finish()

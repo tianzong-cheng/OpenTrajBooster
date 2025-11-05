@@ -132,7 +132,8 @@ class FourierGr1ArmsOnlyDataConfig(BaseDataConfig):
             ),
         ]
         return ComposedModalityTransform(transforms=transforms)
-    
+
+
 ################################### our data ###########################################
 class OpenWBCDataConfig(BaseDataConfig):
     video_keys = ["video.ego_view", "video.wrist_left", "video.wrist_right"]
@@ -141,8 +142,8 @@ class OpenWBCDataConfig(BaseDataConfig):
         "state.right_arm",
         "state.left_hand",
         "state.right_hand",
-        "state.left_leg", 
-        "state.right_leg", 
+        "state.left_leg",
+        "state.right_leg",
     ]
     action_keys = [
         "action.left_arm",
@@ -153,7 +154,7 @@ class OpenWBCDataConfig(BaseDataConfig):
     ]
     language_keys = ["annotation.human.action.task_description"]
     observation_indices = [0]
-    action_indices = list(range(16)) ## chunk size
+    action_indices = list(range(16))  ## chunk size
 
     def modality_config(self) -> dict[str, ModalityConfig]:
         video_modality = ModalityConfig(
@@ -983,5 +984,5 @@ DATA_CONFIG_MAP = {
     "unitree_g1_full_body": UnitreeG1FullBodyDataConfig(),
     "oxe_droid": OxeDroidDataConfig(),
     "agibot_genie1": AgibotGenie1DataConfig(),
-    'openwbc_g1': OpenWBCDataConfig(),
+    "openwbc_g1": OpenWBCDataConfig(),
 }

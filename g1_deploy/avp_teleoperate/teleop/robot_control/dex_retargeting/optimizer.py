@@ -316,7 +316,7 @@ class DexPilotOptimizer(Optimizer):
     ):
         if len(finger_tip_link_names) < 2 or len(finger_tip_link_names) > 5:
             raise ValueError(
-                f"DexPilot optimizer can only be applied to hands with 2 to 5 fingers, but got "
+                "DexPilot optimizer can only be applied to hands with 2 to 5 fingers, but got "
                 f"{len(finger_tip_link_names)} fingers."
             )
         self.num_fingers = len(finger_tip_link_names)

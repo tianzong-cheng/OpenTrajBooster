@@ -306,11 +306,7 @@ class Eagle2ImageProcessor(BaseImageProcessor):
             image = np.pad(image, padding, mode="symmetric")
         else:
             raise ValueError(f"Invalid padding mode: {mode}")
-        image = (
-            to_channel_dimension_format(image, data_format, input_data_format)
-            if data_format is not None
-            else image
-        )
+        image = to_channel_dimension_format(image, data_format, input_data_format) if data_format is not None else image
         return image
 
     # Copied from transformers.models.llava_next.image_processing_llava_next.LlavaNextImageProcessor._resize_for_patching
@@ -340,9 +336,7 @@ class Eagle2ImageProcessor(BaseImageProcessor):
 
         new_height, new_width = _get_patch_output_size(image, target_resolution, input_data_format)
         # Resize the image
-        resized_image = resize(
-            image, (new_height, new_width), resample=resample, input_data_format=input_data_format
-        )
+        resized_image = resize(image, (new_height, new_width), resample=resample, input_data_format=input_data_format)
 
         return resized_image
 
@@ -378,9 +372,9 @@ class Eagle2ImageProcessor(BaseImageProcessor):
             """
             new area > 60% of original image area is enough.
             """
-            factor_based_on_area_n_ratio = min(
-                (ratio[0] * ratio[1] * image_size * image_size) / area, 0.6
-            ) * min(target_aspect_ratio / aspect_ratio, aspect_ratio / target_aspect_ratio)
+            factor_based_on_area_n_ratio = min((ratio[0] * ratio[1] * image_size * image_size) / area, 0.6) * min(
+                target_aspect_ratio / aspect_ratio, aspect_ratio / target_aspect_ratio
+            )
 
             if factor_based_on_area_n_ratio > best_factor:
                 best_factor = factor_based_on_area_n_ratio
@@ -466,9 +460,7 @@ class Eagle2ImageProcessor(BaseImageProcessor):
 
         # make sure that all patches are in the input data format
         processed_tiles = [
-            to_channel_dimension_format(
-                tile, channel_dim=data_format, input_channel_dim=input_data_format
-            )
+            to_channel_dimension_format(tile, channel_dim=data_format, input_channel_dim=input_data_format)
             for tile in processed_tiles
         ]
         return processed_tiles
@@ -567,29 +559,23 @@ class Eagle2ImageProcessor(BaseImageProcessor):
         if do_resize:
             assert False, "do_resize is not supported"
             images = [
-                resize(
-                    image=image, size=size, resample=resample, input_data_format=input_data_format
-                )
+                resize(image=image, size=size, resample=resample, input_data_format=input_data_format)
                 for image in images
             ]
 
         if do_rescale:
             images = [
-                self.rescale(image=image, scale=rescale_factor, input_data_format=input_data_format)
-                for image in images
+                self.rescale(image=image, scale=rescale_factor, input_data_format=input_data_format) for image in images
             ]
 
         if do_normalize:
             images = [
-                self.normalize(
-                    image=image, mean=image_mean, std=image_std, input_data_format=input_data_format
-                )
+                self.normalize(image=image, mean=image_mean, std=image_std, input_data_format=input_data_format)
                 for image in images
             ]
 
         images = [
-            to_channel_dimension_format(image, data_format, input_channel_dim=input_data_format)
-            for image in images
+            to_channel_dimension_format(image, data_format, input_channel_dim=input_data_format) for image in images
         ]
 
         return images

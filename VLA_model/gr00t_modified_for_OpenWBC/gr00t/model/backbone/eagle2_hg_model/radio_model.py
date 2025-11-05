@@ -25,14 +25,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 from timm.models import checkpoint_seq, create_model, register_model
-from timm.models.vision_transformer import (
-    Attention,
-    Block,
-)
+from timm.models.vision_transformer import Attention, Block
 from timm.models.vision_transformer import LayerScale as TIMMLayerScale
-from timm.models.vision_transformer import (
-    VisionTransformer,
-)
+from timm.models.vision_transformer import VisionTransformer
 from timm.models.vision_transformer import (
     _create_vision_transformer as _timm_create_vision_transformer,
 )
@@ -119,9 +114,7 @@ class FlashAttention(nn.Module):
                     causal=causal,
                 )
                 output = rearrange(
-                    pad_input(
-                        rearrange(output_unpad, "nnz h d -> nnz (h d)"), indices, batch_size, seqlen
-                    ),
+                    pad_input(rearrange(output_unpad, "nnz h d -> nnz (h d)"), indices, batch_size, seqlen),
                     "b s (h d) -> b s h d",
                     h=nheads,
                 )
@@ -299,9 +292,7 @@ class ViTPatchGenerator(nn.Module):
 
         if abs_pos:
             scale = embed_dim**-0.5
-            self.pos_embed = nn.Parameter(
-                torch.randn(1, self.num_patches, embed_dim, **factory) * scale
-            )
+            self.pos_embed = nn.Parameter(torch.randn(1, self.num_patches, embed_dim, **factory) * scale)
 
         self.cls_token = ClsToken(
             embed_dim,
@@ -347,9 +338,7 @@ class ViTPatchGenerator(nn.Module):
         if src_proj_weight.shape != targ_proj_weight.shape:
             src_patch_size = int(math.sqrt(src_proj_weight.shape[1] // 3))
 
-            assert (src_patch_size**2) * 3 == src_proj_weight.shape[
-                1
-            ], "Unable to interpolate non-square patch size"
+            assert (src_patch_size**2) * 3 == src_proj_weight.shape[1], "Unable to interpolate non-square patch size"
 
             src_proj_weight = rearrange(
                 src_proj_weight, "b (c h w) -> b c h w", c=3, h=src_patch_size, w=src_patch_size
@@ -381,10 +370,7 @@ class ViTPatchGenerator(nn.Module):
         pos_enc = self.get_pos_enc(patches.shape[0], patch_idxs, input_size)
 
         if self.training and self.pos_dropout > 0:
-            keeps = (
-                torch.rand(patches.shape[0], 1, 1, dtype=pos_enc.dtype, device=pos_enc.device)
-                > self.pos_dropout
-            )
+            keeps = torch.rand(patches.shape[0], 1, 1, dtype=pos_enc.dtype, device=pos_enc.device) > self.pos_dropout
             pos_enc_drop = torch.where(keeps, pos_enc, 0)
         else:
             pos_enc_drop = pos_enc
@@ -409,9 +395,7 @@ class ViTPatchGenerator(nn.Module):
 
         exp_patch_idxs = patch_idxs.unsqueeze(-1).expand(-1, -1, pos_embed.shape[-1])
 
-        pos_embed = torch.gather(
-            pos_embed.expand(patch_idxs.shape[0], -1, -1), dim=1, index=exp_patch_idxs
-        )
+        pos_embed = torch.gather(pos_embed.expand(patch_idxs.shape[0], -1, -1), dim=1, index=exp_patch_idxs)
         return pos_embed
 
     def _get_pos_embeddings(self, batch_size: int, input_dims: Tuple[int, int]):
@@ -430,16 +414,11 @@ class ViTPatchGenerator(nn.Module):
         if self.cpe_mode:
             if self.training:
                 min_scale = math.sqrt(0.1)
-                scale = (
-                    torch.rand(batch_size, 1, 1, device=pos_embed.device) * (1 - min_scale)
-                    + min_scale
-                )
+                scale = torch.rand(batch_size, 1, 1, device=pos_embed.device) * (1 - min_scale) + min_scale
                 aspect_min = math.log(3 / 4)
                 aspect_max = -aspect_min
                 aspect = torch.exp(
-                    torch.rand(batch_size, 1, 1, device=pos_embed.device)
-                    * (aspect_max - aspect_min)
-                    + aspect_min
+                    torch.rand(batch_size, 1, 1, device=pos_embed.device) * (aspect_max - aspect_min) + aspect_min
                 )
 
                 scale_x = scale * aspect
@@ -448,12 +427,12 @@ class ViTPatchGenerator(nn.Module):
 
                 pos_xy = torch.rand(batch_size, 1, 1, 2, device=pos_embed.device) * (1 - scale_xy)
 
-                lin_x = torch.linspace(0, 1, steps=input_dims[1], device=pos_embed.device)[
-                    None, None
-                ].expand(batch_size, input_dims[0], -1)
-                lin_y = torch.linspace(0, 1, steps=input_dims[0], device=pos_embed.device)[
-                    None, :, None
-                ].expand(batch_size, -1, input_dims[1])
+                lin_x = torch.linspace(0, 1, steps=input_dims[1], device=pos_embed.device)[None, None].expand(
+                    batch_size, input_dims[0], -1
+                )
+                lin_y = torch.linspace(0, 1, steps=input_dims[0], device=pos_embed.device)[None, :, None].expand(
+                    batch_size, -1, input_dims[1]
+                )
 
                 lin_xy = torch.stack([lin_x, lin_y], dim=-1)
 
@@ -487,9 +466,9 @@ class ViTPatchGenerator(nn.Module):
             pos_embed = window_select(pos_embed)
 
         if pos_embed.shape[-2:] != input_dims:
-            pos_embed = F.interpolate(
-                pos_embed.float(), size=input_dims, align_corners=True, mode="bilinear"
-            ).to(pos_embed.dtype)
+            pos_embed = F.interpolate(pos_embed.float(), size=input_dims, align_corners=True, mode="bilinear").to(
+                pos_embed.dtype
+            )
 
         pos_embed = pos_embed.flatten(2).permute(0, 2, 1)
 
@@ -673,13 +652,9 @@ def vit_huge_patch16_224(pretrained=False, **kwargs) -> VisionTransformer:
     model_args = dict(patch_size=16, embed_dim=1280, depth=32, num_heads=16, weight_init="skip")
     if pretrained:
         # There is no pretrained version of ViT-H/16, but we can adapt a ViT-H/14 for this purpose
-        model = _create_vision_transformer(
-            "vit_huge_patch14_224", pretrained=True, **dict(model_args, **kwargs)
-        )
+        model = _create_vision_transformer("vit_huge_patch14_224", pretrained=True, **dict(model_args, **kwargs))
     else:
-        model = _create_vision_transformer(
-            "vit_huge_patch16_224", pretrained=False, **dict(model_args, **kwargs)
-        )
+        model = _create_vision_transformer("vit_huge_patch16_224", pretrained=False, **dict(model_args, **kwargs))
     return model
 
 

@@ -9,10 +9,7 @@ from functools import partial
 # copy from https://github.com/huggingface/transformers/blob/main/src/transformers/models/llava_onevision/image_processing_llava_onevision_fast.py
 from typing import List, Optional, Union
 
-from transformers.image_processing_utils import (
-    BatchFeature,
-    get_patch_output_size,
-)
+from transformers.image_processing_utils import BatchFeature, get_patch_output_size
 from transformers.image_processing_utils_fast import (
     BASE_IMAGE_PROCESSOR_FAST_DOCSTRING,
     BASE_IMAGE_PROCESSOR_FAST_DOCSTRING_PREPROCESS,
@@ -89,7 +86,8 @@ class Eagle2_5_VLFastImageProcessorKwargs(DefaultFastImageProcessorKwargs):
 
 
 @add_start_docstrings(
-    "Constructs a fast ConvNeXT image processor. Based on [`SiglipImageProcessor`] with incorporation of processing each video frame.",
+    "Constructs a fast ConvNeXT image processor. Based on [`SiglipImageProcessor`] with incorporation of processing"
+    " each video frame.",
     BASE_IMAGE_PROCESSOR_FAST_DOCSTRING,
     """
         image_grid_pinpoints (`List[List[int]]`, *optional*):
@@ -235,9 +233,9 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
             """
             new area > 60% of original image area is enough.
             """
-            factor_based_on_area_n_ratio = min(
-                (ratio[0] * ratio[1] * image_size * image_size) / area, 0.6
-            ) * min(target_aspect_ratio / aspect_ratio, aspect_ratio / target_aspect_ratio)
+            factor_based_on_area_n_ratio = min((ratio[0] * ratio[1] * image_size * image_size) / area, 0.6) * min(
+                target_aspect_ratio / aspect_ratio, aspect_ratio / target_aspect_ratio
+            )
 
             if factor_based_on_area_n_ratio > best_factor:
                 best_factor = factor_based_on_area_n_ratio
@@ -309,9 +307,7 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
             )
             image_used_to_split = padded_image
         else:
-            image_used_to_split = F.resize(
-                image, (target_height, target_width), interpolation=interpolation
-            )
+            image_used_to_split = F.resize(image, (target_height, target_width), interpolation=interpolation)
 
         processed_tiles = []
         for i in range(blocks):
@@ -404,9 +400,7 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
 
             # Group images by size for batched processing
             processed_image_patches_grouped = {}
-            grouped_image_patches, grouped_image_patches_index = group_images_by_shape(
-                image_patches
-            )
+            grouped_image_patches, grouped_image_patches_index = group_images_by_shape(image_patches)
 
             for shape, stacked_image_patches in grouped_image_patches.items():
                 if do_resize:
@@ -427,13 +421,9 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
                     image_std,
                 )
                 processed_image_patches_grouped[shape] = stacked_image_patches
-            processed_image_patches = reorder_images(
-                processed_image_patches_grouped, grouped_image_patches_index
-            )
+            processed_image_patches = reorder_images(processed_image_patches_grouped, grouped_image_patches_index)
             processed_image_patches = (
-                torch.stack(processed_image_patches, dim=0)
-                if return_tensors
-                else processed_image_patches
+                torch.stack(processed_image_patches, dim=0) if return_tensors else processed_image_patches
             )
             processed_images.append(processed_image_patches)
             image_sizes.append(get_image_size(image, ChannelDimension.FIRST))
@@ -442,9 +432,7 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
             processed_images = self._pad_for_batching(processed_images)
 
         # processed_images = torch.stack(processed_images, dim=0) if return_tensors else processed_images
-        processed_images = (
-            torch.cat(processed_images, dim=0) if return_tensors else processed_images
-        )
+        processed_images = torch.cat(processed_images, dim=0) if return_tensors else processed_images
         return BatchFeature(
             data={"pixel_values": processed_images, "image_sizes": image_sizes},
             tensor_type=return_tensors,
@@ -495,9 +483,7 @@ class Eagle2_5_VLImageProcessorFast(BaseImageProcessorFast):
         # torch resize uses interpolation instead of resample
         resample = kwargs.pop("resample")
         kwargs["interpolation"] = (
-            pil_torch_interpolation_mapping[resample]
-            if isinstance(resample, (PILImageResampling, int))
-            else resample
+            pil_torch_interpolation_mapping[resample] if isinstance(resample, (PILImageResampling, int)) else resample
         )
 
         # Pop kwargs that are not needed in _preprocess

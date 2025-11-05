@@ -1,14 +1,25 @@
-import cv2
-import zmq
-import numpy as np
-import time
 import struct
+import time
 from collections import deque
 from multiprocessing import shared_memory
 
+import cv2
+import numpy as np
+import zmq
+
+
 class ImageClient:
-    def __init__(self, tv_img_shape = None, tv_img_shm_name = None, wrist_img_shape = None, wrist_img_shm_name = None, 
-                       image_show = False, server_address = "192.168.123.164", port = 5555, Unit_Test = False):
+    def __init__(
+        self,
+        tv_img_shape=None,
+        tv_img_shm_name=None,
+        wrist_img_shape=None,
+        wrist_img_shm_name=None,
+        image_show=False,
+        server_address="192.168.123.164",
+        port=5555,
+        Unit_Test=False,
+    ):
         """
         tv_img_shape: User's expected head camera resolution shape (H, W, C). It should match the output of the image service terminal.
 
@@ -38,13 +49,13 @@ class ImageClient:
         self.tv_enable_shm = False
         if self.tv_img_shape is not None and tv_img_shm_name is not None:
             self.tv_image_shm = shared_memory.SharedMemory(name=tv_img_shm_name)
-            self.tv_img_array = np.ndarray(tv_img_shape, dtype = np.uint8, buffer = self.tv_image_shm.buf)
+            self.tv_img_array = np.ndarray(tv_img_shape, dtype=np.uint8, buffer=self.tv_image_shm.buf)
             self.tv_enable_shm = True
-        
+
         self.wrist_enable_shm = False
         if self.wrist_img_shape is not None and wrist_img_shm_name is not None:
             self.wrist_image_shm = shared_memory.SharedMemory(name=wrist_img_shm_name)
-            self.wrist_img_array = np.ndarray(wrist_img_shape, dtype = np.uint8, buffer = self.wrist_image_shm.buf)
+            self.wrist_img_array = np.ndarray(wrist_img_shape, dtype=np.uint8, buffer=self.wrist_image_shm.buf)
             self.wrist_enable_shm = True
 
         # Performance evaluation parameters
@@ -88,7 +99,10 @@ class ImageClient:
                 print(f"[Image Client] Received out-of-order frame ID: {frame_id}")
             else:
                 self._lost_frames += lost
-                print(f"[Image Client] Detected lost frames: {lost}, Expected frame ID: {expected_frame_id}, Received frame ID: {frame_id}")
+                print(
+                    f"[Image Client] Detected lost frames: {lost}, Expected frame ID: {expected_frame_id}, Received"
+                    f" frame ID: {frame_id}"
+                )
         self._last_frame_id = frame_id
         self._total_frames = frame_id + 1
 
@@ -111,9 +125,12 @@ class ImageClient:
             # Calculate lost frame rate
             lost_frame_rate = (self._lost_frames / self._total_frames) * 100 if self._total_frames > 0 else 0
 
-            print(f"[Image Client] Real-time FPS: {real_time_fps:.2f}, Avg Latency: {avg_latency*1000:.2f} ms, Max Latency: {max_latency*1000:.2f} ms, \
-                  Min Latency: {min_latency*1000:.2f} ms, Jitter: {jitter*1000:.2f} ms, Lost Frame Rate: {lost_frame_rate:.2f}%")
-    
+            print(
+                f"[Image Client] Real-time FPS: {real_time_fps:.2f}, Avg Latency: {avg_latency*1000:.2f} ms, Max"
+                f" Latency: {max_latency*1000:.2f} ms,                   Min Latency: {min_latency*1000:.2f} ms,"
+                f" Jitter: {jitter*1000:.2f} ms, Lost Frame Rate: {lost_frame_rate:.2f}%"
+            )
+
     def _close(self):
         self._socket.close()
         self._context.term()
@@ -121,7 +138,6 @@ class ImageClient:
             cv2.destroyAllWindows()
         print("Image client has been closed.")
 
-    
     def receive_process(self):
         # Set up ZeroMQ context and socket
         self._context = zmq.Context()
@@ -137,12 +153,12 @@ class ImageClient:
                 receive_time = time.time()
 
                 if self._enable_performance_eval:
-                    header_size = struct.calcsize('dI')
+                    header_size = struct.calcsize("dI")
                     try:
                         # Attempt to extract header and image data
                         header = message[:header_size]
                         jpg_bytes = message[header_size:]
-                        timestamp, frame_id = struct.unpack('dI', header)
+                        timestamp, frame_id = struct.unpack("dI", header)
                     except struct.error as e:
                         print(f"[Image Client] Error unpacking header: {e}, discarding message.")
                         continue
@@ -157,16 +173,16 @@ class ImageClient:
                     continue
 
                 if self.tv_enable_shm:
-                    np.copyto(self.tv_img_array, np.array(current_image[:, :self.tv_img_shape[1]]))
-                
+                    np.copyto(self.tv_img_array, np.array(current_image[:, : self.tv_img_shape[1]]))
+
                 if self.wrist_enable_shm:
-                    np.copyto(self.wrist_img_array, np.array(current_image[:, -self.wrist_img_shape[1]:]))
-                
+                    np.copyto(self.wrist_img_array, np.array(current_image[:, -self.wrist_img_shape[1] :]))
+
                 if self._image_show:
                     height, width = current_image.shape[:2]
                     resized_image = cv2.resize(current_image, (width // 2, height // 2))
-                    cv2.imshow('Image Client Stream', resized_image)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                    cv2.imshow("Image Client Stream", resized_image)
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
                         self.running = False
 
                 if self._enable_performance_eval:
@@ -180,6 +196,7 @@ class ImageClient:
         finally:
             self._close()
 
+
 if __name__ == "__main__":
     # example1
     # tv_img_shape = (480, 1280, 3)
@@ -191,5 +208,5 @@ if __name__ == "__main__":
     # example2
     # Initialize the client with performance evaluation enabled
     # client = ImageClient(image_show = True, server_address='127.0.0.1', Unit_Test=False) # local test
-    client = ImageClient(image_show = True, server_address='192.168.123.164', Unit_Test=False) # deployment test
+    client = ImageClient(image_show=True, server_address="192.168.123.164", Unit_Test=False)  # deployment test
     client.receive_process()

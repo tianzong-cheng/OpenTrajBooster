@@ -17,15 +17,11 @@ from dataclasses import dataclass, field
 
 import torch
 import torch.nn.functional as F
+from gr00t.model.action_head.action_encoder import SinusoidalPositionalEncoding, swish
 from torch import nn
 from torch.distributions import Beta
 from transformers import PretrainedConfig
 from transformers.feature_extraction_utils import BatchFeature
-
-from gr00t.model.action_head.action_encoder import (
-    SinusoidalPositionalEncoding,
-    swish,
-)
 
 from .cross_attention_dit import DiT, SelfAttentionTransformer
 
@@ -84,9 +80,7 @@ class MultiEmbodimentActionEncoder(nn.Module):
             # shape (B,) => (B,T)
             timesteps = timesteps.unsqueeze(1).expand(-1, T)
         else:
-            raise ValueError(
-                "Expected `timesteps` to have shape (B,) so we can replicate across T."
-            )
+            raise ValueError("Expected `timesteps` to have shape (B,) so we can replicate across T.")
 
         # 2) Standard action MLP step for shape => (B, T, w)
         a_emb = self.W1(actions, cat_ids)
@@ -107,19 +101,11 @@ class MultiEmbodimentActionEncoder(nn.Module):
 class FlowmatchingActionHeadConfig(PretrainedConfig):
     """NOTE: N1.5 uses XEmbFlowmatchingPolicyHeadConfig as action head"""
 
-    add_pos_embed: bool = field(
-        default=True, metadata={"help": "Whether to add positional embedding"}
-    )
+    add_pos_embed: bool = field(default=True, metadata={"help": "Whether to add positional embedding"})
     model_dtype: str = field(default="float32", metadata={"help": "Model data type."})
-    diffusion_model_cfg: dict = field(
-        default=None, metadata={"help": "Diffusion model configuration."}
-    )
-    input_embedding_dim: int = field(
-        default=1536, metadata={"help": "Input embedding channel dimension."}
-    )
-    backbone_embedding_dim: int = field(
-        default=1536, metadata={"help": "Backbone embedding channel dimension."}
-    )
+    diffusion_model_cfg: dict = field(default=None, metadata={"help": "Diffusion model configuration."})
+    input_embedding_dim: int = field(default=1536, metadata={"help": "Input embedding channel dimension."})
+    backbone_embedding_dim: int = field(default=1536, metadata={"help": "Backbone embedding channel dimension."})
 
     hidden_size: int = field(default=1024, metadata={"help": "Input embedding dimension."})
     max_seq_len: int = field(default=1024, metadata={"help": "Maxium Sequence Length"})
@@ -127,21 +113,15 @@ class FlowmatchingActionHeadConfig(PretrainedConfig):
     action_horizon: int = field(default=None, metadata={"help": "Action horizon."})
     noise_beta_alpha: float = field(default=1.5, metadata={"help": ""})
     noise_beta_beta: float = field(default=1.0, metadata={"help": ""})
-    noise_s: float = field(
-        default=0.999, metadata={"help": "Flow matching noise Beta distribution s."}
-    )
-    num_timestep_buckets: int = field(
-        default=1000, metadata={"help": "Number of timestep discretization buckets."}
-    )
+    noise_s: float = field(default=0.999, metadata={"help": "Flow matching noise Beta distribution s."})
+    num_timestep_buckets: int = field(default=1000, metadata={"help": "Number of timestep discretization buckets."})
     num_inference_timesteps: int = field(
         default=None,
         metadata={"help": "Number of inference steps for noise diffusion."},
     )
     max_num_embodiments: int = field(default=32, metadata={"help": "Number of embodiments."})
     tune_projector: bool = field(default=True, metadata={"help": "Whether to tune the projector."})
-    tune_diffusion_model: bool = field(
-        default=True, metadata={"help": "Whether to tune the diffusion model."}
-    )
+    tune_diffusion_model: bool = field(default=True, metadata={"help": "Whether to tune the diffusion model."})
     load_pretrained_det_decode_layer_path: str = field(
         default=None, metadata={"help": "Path to pretrained detection model."}
     )
@@ -194,13 +174,9 @@ class FlowmatchingActionHead(nn.Module):
             output_dim=self.action_dim,
         )
 
-        self.vlln = (
-            nn.LayerNorm(config.backbone_embedding_dim) if config.use_vlln else nn.Identity()
-        )
+        self.vlln = nn.LayerNorm(config.backbone_embedding_dim) if config.use_vlln else nn.Identity()
         self.vl_self_attention = (
-            SelfAttentionTransformer(**config.vl_self_attention_cfg)
-            if config.use_vlln
-            else nn.Identity()
+            SelfAttentionTransformer(**config.vl_self_attention_cfg) if config.use_vlln else nn.Identity()
         )
 
         if config.add_pos_embed:
@@ -348,7 +324,6 @@ class FlowmatchingActionHead(nn.Module):
 
     @torch.no_grad()
     def get_action(self, backbone_output: BatchFeature, action_input: BatchFeature) -> BatchFeature:
-
         backbone_output = self.process_backbone_output(backbone_output)
 
         # Get vision and language embeddings.
@@ -376,9 +351,7 @@ class FlowmatchingActionHead(nn.Module):
             t_discretized = int(t_cont * self.num_timestep_buckets)
 
             # Embed noised action trajectory.
-            timesteps_tensor = torch.full(
-                size=(batch_size,), fill_value=t_discretized, device=device
-            )
+            timesteps_tensor = torch.full(size=(batch_size,), fill_value=t_discretized, device=device)
             action_features = self.action_encoder(actions, timesteps_tensor, embodiment_id)
             # Maybe add position embedding.
             if self.config.add_pos_embed:

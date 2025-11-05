@@ -61,10 +61,7 @@ from lerobot.common.robots import (  # noqa: F401
     so100_follower,
     so101_follower,
 )
-from lerobot.common.utils.utils import (
-    init_logging,
-    log_say,
-)
+from lerobot.common.utils.utils import init_logging, log_say
 
 # NOTE:
 # Sometimes we would like to abstract different env, or run this on a separate machine
@@ -97,9 +94,7 @@ class Gr00tRobotInferenceClient:
         self.camera_keys = camera_keys
         self.robot_state_keys = robot_state_keys
         self.show_images = show_images
-        assert (
-            len(robot_state_keys) == 6
-        ), f"robot_state_keys should be size 6, but got {len(robot_state_keys)} "
+        assert len(robot_state_keys) == 6, f"robot_state_keys should be size 6, but got {len(robot_state_keys)} "
         self.modality_keys = ["single_arm", "gripper"]
 
     def get_action(self, observation_dict, lang: str):
@@ -141,9 +136,7 @@ class Gr00tRobotInferenceClient:
             lerobot_actions.append(action_dict)
         return lerobot_actions
 
-    def _convert_to_lerobot_action(
-        self, action_chunk: dict[str, np.array], idx: int
-    ) -> dict[str, float]:
+    def _convert_to_lerobot_action(self, action_chunk: dict[str, np.array], idx: int) -> dict[str, float]:
         """
         This is a magic function that converts the action chunk to a dict[str, float]
         This is because the action chunk is a dict[str, np.array]

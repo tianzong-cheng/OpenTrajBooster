@@ -15,7 +15,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 from gr00t.data.dataset import LeRobotSingleDataset
 from gr00t.model.policy import BasePolicy
 
@@ -56,17 +55,13 @@ def calc_mse_for_single_trajectory(
         #     [data_point[f"state.{key}"][0] for key in modality_keys], axis=0
         # )
         try:
-            concat_state = np.concatenate(
-                [data_point[f"state.{key}"][0] for key in modality_keys], axis=0
-            )
-        except: 
-            print('WARNING: state not found, setting to ZERO')
+            concat_state = np.concatenate([data_point[f"state.{key}"][0] for key in modality_keys], axis=0)
+        except:
+            print("WARNING: state not found, setting to ZERO")
             concat_state = np.concatenate(
                 [np.zeros_like(data_point[f"action.{key}"][0]) for key in modality_keys], axis=0
             )
-        concat_gt_action = np.concatenate(
-            [data_point[f"action.{key}"][0] for key in modality_keys], axis=0
-        )
+        concat_gt_action = np.concatenate([data_point[f"action.{key}"][0] for key in modality_keys], axis=0)
 
         state_joints_across_time.append(concat_state)
         gt_action_across_time.append(concat_gt_action)
@@ -129,7 +124,7 @@ def calc_mse_for_single_trajectory(
             ax.legend()
 
         plt.tight_layout()
-        plt.savefig(f'test_mul_pink_fox_{modality_keys[0]}.png')
+        plt.savefig(f"test_mul_pink_fox_{modality_keys[0]}.png")
         plt.show()
 
     return mse

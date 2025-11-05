@@ -1,22 +1,23 @@
 import math
+import os
 import select
 import threading
 import time
 
+import lcm
 import numpy as np
-
+from lcm_types.arm_action_lcmt import arm_action_lcmt
 from lcm_types.body_control_data_lcmt import body_control_data_lcmt
+from lcm_types.command_lcmt import command_lcmt
 from lcm_types.rc_command_lcmt import rc_command_lcmt
 from lcm_types.state_estimator_lcmt import state_estimator_lcmt
-from lcm_types.arm_action_lcmt import arm_action_lcmt
-from lcm_types.command_lcmt import command_lcmt
-import lcm
-import os
+
+
 def get_rpy_from_quaternion(q):
     w, x, y, z = q
-    r = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x ** 2 + y ** 2))
+    r = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
     p = np.arcsin(2 * (w * y - z * x))
-    y = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y ** 2 + z ** 2))
+    y = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y**2 + z**2))
     return np.array([r, p, y])
 
 
@@ -29,20 +30,11 @@ def get_rotation_matrix_from_rpy(rpy):
         np.array[float[3,3]]: rotation matrix.
     """
     r, p, y = rpy
-    R_x = np.array([[1, 0, 0],
-                    [0, math.cos(r), -math.sin(r)],
-                    [0, math.sin(r), math.cos(r)]
-                    ])
+    R_x = np.array([[1, 0, 0], [0, math.cos(r), -math.sin(r)], [0, math.sin(r), math.cos(r)]])
 
-    R_y = np.array([[math.cos(p), 0, math.sin(p)],
-                    [0, 1, 0],
-                    [-math.sin(p), 0, math.cos(p)]
-                    ])
+    R_y = np.array([[math.cos(p), 0, math.sin(p)], [0, 1, 0], [-math.sin(p), 0, math.cos(p)]])
 
-    R_z = np.array([[math.cos(y), -math.sin(y), 0],
-                    [math.sin(y), math.cos(y), 0],
-                    [0, 0, 1]
-                    ])
+    R_z = np.array([[math.cos(y), -math.sin(y), 0], [math.sin(y), math.cos(y), 0], [0, 0, 1]])
 
     rot = np.dot(R_z, np.dot(R_y, R_x))
     return rot
@@ -52,26 +44,52 @@ class StateEstimator:
     def __init__(self, lc):
 
         # reverse legs, from cpp order to isaacgym order
-        self.joint_idxs = [0,1,2,3,4,5,6,7,8,9,10,11,12,15,16,17,18,19,20,21,22,23,24,25,26,27,28]
-
+        self.joint_idxs = [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+        ]
 
         self.lc = lc
         # os.environ["LCM_DEFAULT_URL"] = "wlan0"
         # self.new_lcm = lcm.LCM("udpm://239.255.76.67:7667?ttl=255")
         self.num_dofs = 27
-        self.joint_pos = np.zeros(self.num_dofs+2)
-        self.joint_vel = np.zeros(self.num_dofs+2)
+        self.joint_pos = np.zeros(self.num_dofs + 2)
+        self.joint_vel = np.zeros(self.num_dofs + 2)
         self.arm_actions = np.zeros(14)
         self.euler = np.zeros(3)
         self.R = np.eye(3)
         self.buf_idx = 0
         self.imu_ang_vel = np.zeros(3)
-        
+
         self.left_stick = [0, 0]
         self.right_stick = [0, 0]
         self.right_lower_right_switch = 0
         self.right_lower_right_switch_pressed = 0
-
 
         self.init_time = time.time()
         self.received_first_bodydate = False
@@ -92,18 +110,15 @@ class StateEstimator:
         self.timeuprev = time.time()
         self.command = np.zeros(4)
         self.command[3] = 0.74
-        
 
     def get_gravity_vector(self):
         grav = np.dot(self.R.T, np.array([0, 0, -1]))
         return grav
 
-
     def get_rpy(self):
         return self.euler
 
     def get_command(self):
-
         cmd_x = 0.6 * self.left_stick[1]
         cmd_y = -0.5 * self.left_stick[0]
 
@@ -113,7 +128,6 @@ class StateEstimator:
 
         # if np.abs(cmd_x) < 0.1 and np.abs(cmd_y) < 0.1 and np.abs(cmd_yaw) < 0.1:
         #     return np.array([0.0, 0.0, 0.0, 0.68])
-
 
         # return self.command
         return np.array([cmd_x, cmd_y, cmd_yaw, cmd_height])
@@ -162,12 +176,13 @@ class StateEstimator:
         self.timeuprev = time.time()
         self.buf_idx += 1
         self.euler_prev = np.array(msg.rpy)
-        
-    def _rc_command_cb(self, channel, data):
 
+    def _rc_command_cb(self, channel, data):
         msg = rc_command_lcmt.decode(data)
 
-        self.right_lower_right_switch_pressed = ((msg.right_lower_right_switch and not self.right_lower_right_switch) or self.right_lower_right_switch_pressed)
+        self.right_lower_right_switch_pressed = (
+            msg.right_lower_right_switch and not self.right_lower_right_switch
+        ) or self.right_lower_right_switch_pressed
 
         self.right_stick = msg.right_stick
         self.left_stick = msg.left_stick
@@ -191,7 +206,7 @@ class StateEstimator:
                 else:
                     continue
                 # if nrfds:
-                    # self.new_lcm.handle()
+                # self.new_lcm.handle()
                 # else:
                 #     continue
 

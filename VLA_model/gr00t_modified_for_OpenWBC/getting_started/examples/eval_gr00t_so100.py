@@ -233,18 +233,14 @@ if __name__ == "__main__":
     default_dataset_path = os.path.expanduser("~/datasets/so100_strawberry_grape")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--use_policy", action="store_true"
-    )  # default is to playback the provided dataset
+    parser.add_argument("--use_policy", action="store_true")  # default is to playback the provided dataset
     parser.add_argument("--dataset_path", type=str, default=default_dataset_path)
     parser.add_argument("--host", type=str, default="10.110.17.183")
     parser.add_argument("--port", type=int, default=5555)
     parser.add_argument("--action_horizon", type=int, default=12)
     parser.add_argument("--actions_to_execute", type=int, default=350)
     parser.add_argument("--cam_idx", type=int, default=1)
-    parser.add_argument(
-        "--lang_instruction", type=str, default="Pick up the fruits and place them on the plate."
-    )
+    parser.add_argument("--lang_instruction", type=str, default="Pick up the fruits and place them on the plate.")
     parser.add_argument("--record_imgs", action="store_true")
     args = parser.parse_args()
 
@@ -253,9 +249,7 @@ if __name__ == "__main__":
 
     ACTIONS_TO_EXECUTE = args.actions_to_execute
     USE_POLICY = args.use_policy
-    ACTION_HORIZON = (
-        args.action_horizon
-    )  # we will execute only some actions from the action_chunk of 16
+    ACTION_HORIZON = args.action_horizon  # we will execute only some actions from the action_chunk of 16
     MODALITY_KEYS = ["single_arm", "gripper"]
     if USE_POLICY:
         client = Gr00tRobotInferenceClient(

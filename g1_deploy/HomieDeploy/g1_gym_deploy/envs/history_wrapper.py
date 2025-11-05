@@ -10,23 +10,24 @@ class HistoryWrapper:
 
         self.obs_history_length = self.env.num_history_length
         self.num_obs_history = self.obs_history_length * self.env.num_obs
-        self.obs_history = torch.zeros(self.env.num_envs, self.num_obs_history, dtype=torch.float,
-                                       device=self.env.device, requires_grad=False)
+        self.obs_history = torch.zeros(
+            self.env.num_envs, self.num_obs_history, dtype=torch.float, device=self.env.device, requires_grad=False
+        )
 
     def step(self, action):
         obs = self.env.step(action)
-        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs:], obs), dim=-1)
-        return {'obs': obs, 'obs_history': self.obs_history}
+        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs :], obs), dim=-1)
+        return {"obs": obs, "obs_history": self.obs_history}
 
     def get_observations(self):
         obs = self.env.get_observations()
-        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs:], obs), dim=-1)
-        return {'obs': obs, 'obs_history': self.obs_history}
+        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs :], obs), dim=-1)
+        return {"obs": obs, "obs_history": self.obs_history}
 
     def get_obs(self):
         obs = self.env.get_obs()
-        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs:], obs), dim=-1)
-        return {'obs': obs, 'obs_history': self.obs_history}
+        self.obs_history = torch.cat((self.obs_history[:, self.env.num_obs :], obs), dim=-1)
+        return {"obs": obs, "obs_history": self.obs_history}
 
     def reset(self):
         ret = self.env.reset()

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -28,10 +28,10 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import torch
 import numpy as np
-
+import torch
 from rsl_rl.utils import split_and_pad_trajectories
+
 
 class ReachRolloutStorage:
     class Transition:
@@ -46,11 +46,11 @@ class ReachRolloutStorage:
             self.action_mean = None
             self.action_sigma = None
             self.next_critic_observations = None
-        
+
         def clear(self):
             self.__init__()
 
-    def __init__(self, num_envs, num_transitions_per_env, obs_shape, privileged_obs_shape, actions_shape, device='cpu'):
+    def __init__(self, num_envs, num_transitions_per_env, obs_shape, privileged_obs_shape, actions_shape, device="cpu"):
         self.device = device
         # num_transitions_per_env *= 2
         self.obs_shape = obs_shape
@@ -60,8 +60,12 @@ class ReachRolloutStorage:
         # Core
         self.observations = torch.zeros(num_transitions_per_env, num_envs, *obs_shape, device=self.device)
         if privileged_obs_shape[0] is not None:
-            self.privileged_observations = torch.zeros(num_transitions_per_env, num_envs, *privileged_obs_shape, device=self.device)
-            self.next_privileged_observations = torch.zeros(num_transitions_per_env, num_envs, *privileged_obs_shape, device=self.device)
+            self.privileged_observations = torch.zeros(
+                num_transitions_per_env, num_envs, *privileged_obs_shape, device=self.device
+            )
+            self.next_privileged_observations = torch.zeros(
+                num_transitions_per_env, num_envs, *privileged_obs_shape, device=self.device
+            )
         else:
             self.privileged_observations = None
             self.next_privileged_observations = None
@@ -86,8 +90,10 @@ class ReachRolloutStorage:
         if self.step >= self.num_transitions_per_env:
             raise AssertionError("Rollout buffer overflow")
         self.observations[self.step].copy_(transition.observations)
-        if self.privileged_observations is not None: self.privileged_observations[self.step].copy_(transition.critic_observations)
-        if self.next_privileged_observations is not None: self.next_privileged_observations[self.step].copy_(transition.next_critic_observations)
+        if self.privileged_observations is not None:
+            self.privileged_observations[self.step].copy_(transition.critic_observations)
+        if self.next_privileged_observations is not None:
+            self.next_privileged_observations[self.step].copy_(transition.next_critic_observations)
         self.actions[self.step].copy_(transition.actions)
         self.rewards[self.step].copy_(transition.rewards.view(-1, 1))
         self.dones[self.step].copy_(transition.dones.view(-1, 1))
@@ -119,10 +125,12 @@ class ReachRolloutStorage:
         done = self.dones
         done[-1] = 1
         flat_dones = done.permute(1, 0, 2).reshape(-1, 1)
-        done_indices = torch.cat((flat_dones.new_tensor([-1], dtype=torch.int64), flat_dones.nonzero(as_tuple=False)[:, 0]))
-        trajectory_lengths = (done_indices[1:] - done_indices[:-1])
+        done_indices = torch.cat(
+            (flat_dones.new_tensor([-1], dtype=torch.int64), flat_dones.nonzero(as_tuple=False)[:, 0])
+        )
+        trajectory_lengths = done_indices[1:] - done_indices[:-1]
         return trajectory_lengths.float().mean(), self.rewards.mean()
-    
+
     def get_dagger_dataset(self):
         observations = self.observations.flatten(0, 1)
         if self.privileged_observations is not None:
@@ -132,14 +140,14 @@ class ReachRolloutStorage:
             critic_observations = observations
             next_critic_observations = observations
 
-        gt_actions = critic_observations[:,-4:]
+        gt_actions = critic_observations[:, -4:]
 
         return observations, gt_actions
 
     def mini_batch_generator(self, num_mini_batches, num_epochs=8):
         batch_size = self.num_envs * self.num_transitions_per_env
         mini_batch_size = batch_size // num_mini_batches
-        indices = torch.randperm(num_mini_batches*mini_batch_size, requires_grad=False, device=self.device)
+        indices = torch.randperm(num_mini_batches * mini_batch_size, requires_grad=False, device=self.device)
 
         observations = self.observations.flatten(0, 1)
         if self.privileged_observations is not None:
@@ -159,9 +167,8 @@ class ReachRolloutStorage:
 
         for epoch in range(num_epochs):
             for i in range(num_mini_batches):
-
-                start = i*mini_batch_size
-                end = (i+1)*mini_batch_size
+                start = i * mini_batch_size
+                end = (i + 1) * mini_batch_size
                 batch_idx = indices[start:end]
 
                 obs_batch = observations[batch_idx]
@@ -174,5 +181,4 @@ class ReachRolloutStorage:
                 advantages_batch = advantages[batch_idx]
                 old_mu_batch = old_mu[batch_idx]
                 old_sigma_batch = old_sigma[batch_idx]
-                yield obs_batch, critic_observations_batch, actions_batch, next_critic_observations_batch, target_values_batch, advantages_batch, returns_batch, \
-                       old_actions_log_prob_batch, old_mu_batch, old_sigma_batch
+                yield obs_batch, critic_observations_batch, actions_batch, next_critic_observations_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, old_mu_batch, old_sigma_batch

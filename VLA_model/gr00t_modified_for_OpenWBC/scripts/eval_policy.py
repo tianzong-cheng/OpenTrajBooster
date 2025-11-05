@@ -19,7 +19,6 @@ from typing import List, Literal
 
 import numpy as np
 import tyro
-
 from gr00t.data.dataset import LeRobotSingleDataset
 from gr00t.data.embodiment_tags import EMBODIMENT_TAG_MAPPING
 from gr00t.eval.robot import RobotInferenceClient
@@ -104,7 +103,7 @@ def main(args: ArgsConfig):
 
     # Get the supported modalities for the policy
     modality = policy.get_modality_config()
-    print("Current modality config: \n", modality['action'].modality_keys)
+    print("Current modality config: \n", modality["action"].modality_keys)
 
     # Create the dataset
     dataset = LeRobotSingleDataset(

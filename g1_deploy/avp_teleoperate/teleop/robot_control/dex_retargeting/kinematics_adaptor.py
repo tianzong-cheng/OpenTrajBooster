@@ -60,10 +60,10 @@ class MimicJointKinematicAdaptor(KinematicAdaptor):
         union_set = set(mimic_joint_names).intersection(set(target_joint_names))
         if len(union_set) > 0:
             raise ValueError(
-                f"Mimic joint should not be one of the target joints.\n"
+                "Mimic joint should not be one of the target joints.\n"
                 f"Mimic joints: {mimic_joint_names}.\n"
                 f"Target joints: {target_joint_names}\n"
-                f"You need to specify the target joint names explicitly in your retargeting config"
+                "You need to specify the target joint names explicitly in your retargeting config"
                 f" for robot with mimic joint constraints: {target_joint_names}"
             )
 
@@ -79,7 +79,7 @@ class MimicJointKinematicAdaptor(KinematicAdaptor):
         len_mul, len_offset = self.multipliers.shape[0], self.offsets.shape[0]
         if not (len_mimic == len_source == len_mul == len_offset):
             raise ValueError(
-                f"Mimic joints setting dimension mismatch.\n"
+                "Mimic joints setting dimension mismatch.\n"
                 f"Source joints: {len_source}, mimic joints: {len_mimic}, multiplier: {len_mul}, offset: {len_offset}"
             )
         self.num_active_joints = len(robot.dof_joint_names) - len_mimic

@@ -18,7 +18,6 @@ from typing import Literal
 
 import numpy as np
 import tyro
-
 from gr00t.data.embodiment_tags import EMBODIMENT_TAG_MAPPING
 from gr00t.eval.robot import RobotInferenceClient, RobotInferenceServer
 from gr00t.experiment.data_config import DATA_CONFIG_MAP

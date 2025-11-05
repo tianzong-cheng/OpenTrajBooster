@@ -27,7 +27,6 @@ from typing import List, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import tyro
-
 from gr00t.data.dataset import (
     LE_ROBOT_MODALITY_FILENAME,
     LeRobotMixtureDataset,
@@ -112,9 +111,7 @@ def plot_state_action_space(
 
         # Skip if either key is not in the dictionaries
         if state_key not in state_dict or action_key not in action_dict:
-            print(
-                f"Warning: Skipping {key} as it's not found in both state and action dictionaries"
-            )
+            print(f"Warning: Skipping {key} as it's not found in both state and action dictionaries")
             continue
 
         # Get the data
@@ -191,9 +188,7 @@ def load_dataset(
     assert len(dataset_path) > 0, "dataset_path must be a list of at least one path"
 
     # 1. get modality keys
-    single_dataset_path = pathlib.Path(
-        dataset_path[0]
-    )  # take first one, assume all have same modality keys
+    single_dataset_path = pathlib.Path(dataset_path[0])  # take first one, assume all have same modality keys
     modality_keys_dict = get_modality_keys(single_dataset_path)
     video_modality_keys = modality_keys_dict["video"]
     language_modality_keys = modality_keys_dict["annotation"]

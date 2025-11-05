@@ -22,8 +22,6 @@ from typing import List, Literal
 
 import torch
 import tyro
-from transformers import TrainingArguments
-
 from gr00t.data.dataset import LeRobotMixtureDataset, LeRobotSingleDataset
 from gr00t.data.schema import EmbodimentTag
 from gr00t.experiment.data_config import DATA_CONFIG_MAP
@@ -31,6 +29,7 @@ from gr00t.experiment.runner import TrainRunner
 from gr00t.model.gr00t_n1 import GR00T_N1_5
 from gr00t.model.transforms import EMBODIMENT_TAG_MAPPING
 from gr00t.utils.peft import get_lora_model
+from transformers import TrainingArguments
 
 
 @dataclass
@@ -163,10 +162,7 @@ def main(config: ArgsConfig):
             single_datasets.append(dataset)
 
         train_dataset = LeRobotMixtureDataset(
-            data_mixture=[
-                (dataset, 1.0)  # we will use equal weights for all datasets
-                for dataset in single_datasets
-            ],
+            data_mixture=[(dataset, 1.0) for dataset in single_datasets],  # we will use equal weights for all datasets
             mode="train",
             balance_dataset_weights=config.balance_dataset_weights,
             balance_trajectory_weights=config.balance_trajectory_weights,

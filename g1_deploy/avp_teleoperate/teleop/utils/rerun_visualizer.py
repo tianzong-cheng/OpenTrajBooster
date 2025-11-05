@@ -1,13 +1,15 @@
-import os
 import json
-import cv2
+import os
 import time
-import rerun as rr
-import rerun.blueprint as rrb
 from datetime import datetime
 
+import cv2
+import rerun as rr
+import rerun.blueprint as rrb
+
+
 class RerunEpisodeReader:
-    def __init__(self, task_dir = ".", json_file="data.json"):
+    def __init__(self, task_dir=".", json_file="data.json"):
         self.task_dir = task_dir
         self.json_file = json_file
 
@@ -19,28 +21,28 @@ class RerunEpisodeReader:
         if not os.path.exists(json_path):
             raise FileNotFoundError(f"Episode {episode_idx} data.json not found.")
 
-        with open(json_path, 'r', encoding='utf-8') as jsonf:
+        with open(json_path, "r", encoding="utf-8") as jsonf:
             json_file = json.load(jsonf)
 
         episode_data = []
 
         # Loop over the data entries and process each one
-        for item_data in json_file['data']:
+        for item_data in json_file["data"]:
             # Process images and other data
-            colors = self._process_images(item_data, 'colors', episode_dir)
-            depths = self._process_images(item_data, 'depths', episode_dir)
-            audios = self._process_audio(item_data, 'audios', episode_dir)
+            colors = self._process_images(item_data, "colors", episode_dir)
+            depths = self._process_images(item_data, "depths", episode_dir)
+            audios = self._process_audio(item_data, "audios", episode_dir)
 
             # Append the data in the item_data list
             episode_data.append(
                 {
-                    'idx': item_data.get('idx', 0),
-                    'colors': colors,
-                    'depths': depths,
-                    'states': item_data.get('states', {}),
-                    'actions': item_data.get('actions', {}),
-                    'tactiles': item_data.get('tactiles', {}),
-                    'audios': audios,
+                    "idx": item_data.get("idx", 0),
+                    "colors": colors,
+                    "depths": depths,
+                    "states": item_data.get("states", {}),
+                    "actions": item_data.get("actions", {}),
+                    "tactiles": item_data.get("tactiles", {}),
+                    "audios": audios,
                 }
             )
 
@@ -69,15 +71,16 @@ class RerunEpisodeReader:
                     pass  # Handle audio data if needed
         return audio_data
 
+
 class RerunLogger:
-    def __init__(self, prefix = "", IdxRangeBoundary = 30, memory_limit = None):
+    def __init__(self, prefix="", IdxRangeBoundary=30, memory_limit=None):
         self.prefix = prefix
         self.IdxRangeBoundary = IdxRangeBoundary
         rr.init(datetime.now().strftime("Runtime_%Y%m%d_%H%M%S"))
         if memory_limit:
-            rr.spawn(memory_limit = memory_limit, hide_welcome_screen = True)
+            rr.spawn(memory_limit=memory_limit, hide_welcome_screen=True)
         else:
-            rr.spawn(hide_welcome_screen = True)
+            rr.spawn(hide_welcome_screen=True)
 
         # Set up blueprint for live visualization
         if self.IdxRangeBoundary:
@@ -87,22 +90,22 @@ class RerunLogger:
         views = []
 
         data_plot_paths = [
-                           f"{self.prefix}left_arm", 
-                           f"{self.prefix}right_arm", 
-                           f"{self.prefix}left_hand", 
-                           f"{self.prefix}right_hand"
+            f"{self.prefix}left_arm",
+            f"{self.prefix}right_arm",
+            f"{self.prefix}left_hand",
+            f"{self.prefix}right_hand",
         ]
         for plot_path in data_plot_paths:
             view = rrb.TimeSeriesView(
-                origin = plot_path,
+                origin=plot_path,
                 time_ranges=[
                     rrb.VisibleTimeRange(
                         "idx",
-                        start = rrb.TimeRangeBoundary.cursor_relative(seq = -self.IdxRangeBoundary),
-                        end = rrb.TimeRangeBoundary.cursor_relative(),
+                        start=rrb.TimeRangeBoundary.cursor_relative(seq=-self.IdxRangeBoundary),
+                        end=rrb.TimeRangeBoundary.cursor_relative(),
                     )
                 ],
-                plot_legend = rrb.PlotLegend(visible = True),
+                plot_legend=rrb.PlotLegend(visible=True),
             )
             views.append(view)
 
@@ -125,32 +128,32 @@ class RerunLogger:
         #     )
         #     views.append(view)
 
-        grid = rrb.Grid(contents = views,
-                        grid_columns=2,               
-                        column_shares=[1, 1],
-                        row_shares=[1, 1], 
+        grid = rrb.Grid(
+            contents=views,
+            grid_columns=2,
+            column_shares=[1, 1],
+            row_shares=[1, 1],
         )
         views.append(rr.blueprint.SelectionPanel(state=rrb.PanelState.Collapsed))
         views.append(rr.blueprint.TimePanel(state=rrb.PanelState.Collapsed))
         rr.send_blueprint(grid)
 
-
     def log_item_data(self, item_data: dict):
-        rr.set_time_sequence("idx", item_data.get('idx', 0))
+        rr.set_time_sequence("idx", item_data.get("idx", 0))
 
         # Log states
-        states = item_data.get('states', {}) or {}
+        states = item_data.get("states", {}) or {}
         for part, state_info in states.items():
             if state_info:
-                values = state_info.get('qpos', [])
+                values = state_info.get("qpos", [])
                 for idx, val in enumerate(values):
                     rr.log(f"{self.prefix}{part}/states/qpos/{idx}", rr.Scalar(val))
 
         # Log actions
-        actions = item_data.get('actions', {}) or {}
+        actions = item_data.get("actions", {}) or {}
         for part, action_info in actions.items():
             if action_info:
-                values = action_info.get('qpos', [])
+                values = action_info.get("qpos", [])
                 for idx, val in enumerate(values):
                     rr.log(f"{self.prefix}{part}/actions/qpos/{idx}", rr.Scalar(val))
 
@@ -185,20 +188,22 @@ class RerunLogger:
 
 
 if __name__ == "__main__":
-    import gdown
-    import zipfile
     import os
+    import zipfile
+
+    import gdown
+
     zip_file = "rerun_testdata.zip"
     zip_file_download_url = "https://drive.google.com/file/d/1f5UuFl1z_gaByg_7jDRj1_NxfJZh2evD/view?usp=sharing"
     unzip_file_output_dir = "./testdata"
     if not os.path.exists(os.path.join(unzip_file_output_dir, "episode_0006")):
         if not os.path.exists(zip_file):
-            file_id = zip_file_download_url.split('/')[5]
+            file_id = zip_file_download_url.split("/")[5]
             gdown.download(id=file_id, output=zip_file, quiet=False)
             print("download ok.")
         if not os.path.exists(unzip_file_output_dir):
             os.makedirs(unzip_file_output_dir)
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(unzip_file_output_dir)
         print("uncompress ok.")
         os.remove(zip_file)
@@ -206,11 +211,10 @@ if __name__ == "__main__":
     else:
         print("rerun_testdata exits.")
 
-
-    episode_reader = RerunEpisodeReader(task_dir = unzip_file_output_dir)
+    episode_reader = RerunEpisodeReader(task_dir=unzip_file_output_dir)
     # TEST EXAMPLE 1 : OFFLINE DATA TEST
     user_input = input("Please enter the start signal (enter 'off' or 'on' to start the subsequent program):\n")
-    if user_input.lower() == 'off':
+    if user_input.lower() == "off":
         episode_data6 = episode_reader.return_episode_data(6)
         print("Starting offline visualization...")
         offline_logger = RerunLogger(prefix="offline/")
@@ -218,15 +222,14 @@ if __name__ == "__main__":
         print("Offline visualization completed.")
 
     # TEST EXAMPLE 2 : ONLINE DATA TEST, SLIDE WINDOW SIZE IS 60, MEMORY LIMIT IS 50MB
-    if user_input.lower() == 'on':
+    if user_input.lower() == "on":
         episode_data8 = episode_reader.return_episode_data(8)
         print("Starting online visualization with fixed idx size...")
-        online_logger = RerunLogger(prefix="online/", IdxRangeBoundary = 60, memory_limit='50MB')
+        online_logger = RerunLogger(prefix="online/", IdxRangeBoundary=60, memory_limit="50MB")
         for item_data in episode_data8:
             online_logger.log_item_data(item_data)
-            time.sleep(0.033) # 30hz
+            time.sleep(0.033)  # 30hz
         print("Online visualization completed.")
-
 
     # # TEST DATA OF data_dir
     # data_dir = "./data"

@@ -34,9 +34,7 @@ def torch_type(trt_type):
     if trt_type in mapping:
         return mapping[trt_type]
 
-    raise TypeError(
-        f"Could not resolve TensorRT datatype to an equivalent numpy datatype. {trt_type}"
-    )
+    raise TypeError(f"Could not resolve TensorRT datatype to an equivalent numpy datatype. {trt_type}")
 
 
 class Engine(object):
@@ -79,9 +77,7 @@ class Engine(object):
 
         with open(file, "rb") as f:
             self.handle = runtime.deserialize_cuda_engine(f.read())
-            assert (
-                self.handle is not None
-            ), f"Failed to deserialize the cuda engine from file: {file}"
+            assert self.handle is not None, f"Failed to deserialize the cuda engine from file: {file}"
 
         self.execution_context = self.handle.create_execution_context()
         self.meta, self.in_meta, self.out_meta = [], [], []
@@ -108,9 +104,7 @@ class Engine(object):
             runtime_shape = self.execution_context.get_tensor_shape(name)
             assert isinstance(x, torch.Tensor), f"Unsupported tensor type: {type(x)}"
             assert runtime_shape == x.shape, f"Invalid input shape: {runtime_shape} != {x.shape}"
-            assert (
-                dtype == x.dtype
-            ), f"Invalid tensor dtype, excepted dtype is {dtype}, but got {x.dtype}"
+            assert dtype == x.dtype, f"Invalid tensor dtype, excepted dtype is {dtype}, but got {x.dtype}"
             assert x.is_cuda, f"Invalid tensor device, excepted device is cuda, but got {x.device}"
             x = x.cuda().contiguous()
             self.execution_context.set_tensor_address(name, x.data_ptr())
@@ -126,12 +120,8 @@ class Engine(object):
             assert (
                 runtime_shape == x.shape
             ), f"Invalid input[{name}] shape: {x.shape}, but the expected shape is: {runtime_shape}"
-            assert (
-                dtype == x.dtype
-            ), f"Invalid tensor[{name}] dtype, expected dtype is {dtype}, but got {x.dtype}"
-            assert (
-                x.is_cuda
-            ), f"Invalid tensor[{name}] device, expected device is cuda, but got {x.device}"
+            assert dtype == x.dtype, f"Invalid tensor[{name}] dtype, expected dtype is {dtype}, but got {x.dtype}"
+            assert x.is_cuda, f"Invalid tensor[{name}] device, expected device is cuda, but got {x.device}"
             x = x.cuda().contiguous()
             self.execution_context.set_tensor_address(name, x.data_ptr())
             reference_tensors.append(x)
@@ -139,24 +129,18 @@ class Engine(object):
         for item in self.out_meta:
             name = item[0]
             runtime_shape = self.execution_context.get_tensor_shape(name)
-            output_tensor = torch.zeros(
-                *runtime_shape, dtype=item[2], device=reference_tensors[0].device
-            )
+            output_tensor = torch.zeros(*runtime_shape, dtype=item[2], device=reference_tensors[0].device)
             self.execution_context.set_tensor_address(name, output_tensor.data_ptr())
             reference_tensors.append(output_tensor)
 
         self.execution_context.execute_async_v3(stream.cuda_stream)
         stream.synchronize()
-        assert len(reference_tensors) == len(self.in_meta) + len(
-            self.out_meta
-        ), f"Invalid input tensors. The expected I/O tensors are {len(self.in_meta) + len(self.out_meta)}, but got {len(reference_tensors)}"
+        assert len(reference_tensors) == len(self.in_meta) + len(self.out_meta), (
+            f"Invalid input tensors. The expected I/O tensors are {len(self.in_meta) + len(self.out_meta)}, but got"
+            f" {len(reference_tensors)}"
+        )
 
         if return_list:
-            return [
-                reference_tensors[len(self.in_meta) + i] for i, item in enumerate(self.out_meta)
-            ]
+            return [reference_tensors[len(self.in_meta) + i] for i, item in enumerate(self.out_meta)]
         else:
-            return {
-                item[0]: reference_tensors[len(self.in_meta) + i]
-                for i, item in enumerate(self.out_meta)
-            }
+            return {item[0]: reference_tensors[len(self.in_meta) + i] for i, item in enumerate(self.out_meta)}

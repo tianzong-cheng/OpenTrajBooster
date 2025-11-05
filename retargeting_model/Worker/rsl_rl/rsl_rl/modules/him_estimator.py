@@ -1,30 +1,35 @@
 import copy
 import math
+
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 import torch.distributions as torchd
-from torch.distributions import Normal, Categorical
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.distributions import Categorical, Normal
 
 
 class HIMEstimator(nn.Module):
-    def __init__(self,
-                 temporal_steps,
-                 num_one_step_obs,
-                 num_height_points,
-                 enc_hidden_dims=[256, 256],
-                 tar_hidden_dims=[256, 256],
-                 latent_dim=32,
-                 activation='elu',
-                 learning_rate=1e-3,
-                 max_grad_norm=10.0,
-                 num_prototype=64,
-                 temperature=3.0,
-                 **kwargs):
+    def __init__(
+        self,
+        temporal_steps,
+        num_one_step_obs,
+        num_height_points,
+        enc_hidden_dims=[256, 256],
+        tar_hidden_dims=[256, 256],
+        latent_dim=32,
+        activation="elu",
+        learning_rate=1e-3,
+        max_grad_norm=10.0,
+        num_prototype=64,
+        temperature=3.0,
+        **kwargs
+    ):
         if kwargs:
-            print("Estimator_CL.__init__ got unexpected arguments, which will be ignored: " + str(
-                [key for key in kwargs.keys()]))
+            print(
+                "Estimator_CL.__init__ got unexpected arguments, which will be ignored: "
+                + str([key for key in kwargs.keys()])
+            )
         super(HIMEstimator, self).__init__()
         activation = get_activation(activation)
 
@@ -69,18 +74,17 @@ class HIMEstimator(nn.Module):
         vel, z = parts[..., :3], parts[..., 3:]
         z = F.normalize(z, dim=-1, p=2)
         return vel.detach(), z.detach()
-    
+
     def compute_response(self, obs_history):
         parts = self.encoder(obs_history.detach())
         vel, z = parts[..., :3], parts[..., 3:]
         z = F.normalize(z, dim=-1, p=2)
         return vel.detach(), z.detach()
-    
+
     def compute_feedback(self, obs):
         z = self.target(obs)
         z = F.normalize(z, dim=-1, p=2)
         return z.detach()
-        
 
     def encode(self, obs_history):
         parts = self.encoder(obs_history.detach())
@@ -92,10 +96,10 @@ class HIMEstimator(nn.Module):
         if lr is not None:
             self.learning_rate = lr
             for param_group in self.optimizer.param_groups:
-                param_group['lr'] = self.learning_rate
-                
-        vel = next_critic_obs[:, self.num_one_step_obs:self.num_one_step_obs+3].detach()
-        next_obs = next_critic_obs.detach()[:, 3:self.num_one_step_obs+3]
+                param_group["lr"] = self.learning_rate
+
+        vel = next_critic_obs[:, self.num_one_step_obs : self.num_one_step_obs + 3].detach()
+        next_obs = next_critic_obs.detach()[:, 3 : self.num_one_step_obs + 3]
 
         z_s = self.encoder(obs_history)
         z_t = self.target(next_obs)

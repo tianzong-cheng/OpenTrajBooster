@@ -163,9 +163,7 @@ class TicTacToeVLMClient:
         prompt += "Based on the current board state, what is your best next move to win or block your opponent? "
         prompt += f"Please choose one of the following positions: {', '.join(member_names)}. "
         prompt += "Only choose an empty position that is not currently occupied by 'X' or 'O'. "
-        prompt += (
-            "Only respond with the position name (e.g., 'CENTER', 'TOP RIGHT', 'BOTTOM LEFT')."
-        )
+        prompt += "Only respond with the position name (e.g., 'CENTER', 'TOP RIGHT', 'BOTTOM LEFT')."
         return prompt
 
     def _gemini_generate(self, image_pth: str, max_retries=3):
@@ -294,7 +292,6 @@ def print_yellow(text):
 
 
 if __name__ == "__main__":
-
     current_task = random.choice(list(TaskToString))
     print_green(f"task: {current_task}")
 
@@ -342,7 +339,6 @@ if __name__ == "__main__":
     #####################################################################
 
     with robot_instance.activate():
-
         print("--------------------------------")
         print_green(" 🤖 Tic-Tac-Toe Bot is running")
         print("--------------------------------")
@@ -371,9 +367,7 @@ if __name__ == "__main__":
                     elif cmd == COMMAND_RESUME:
                         # Generate a new task when resuming
                         if USE_VLM:
-                            print_green(
-                                f" 🤖 Robot is thinking........ (aka {vlm_client.name} vlm)"
-                            )
+                            print_green(f" 🤖 Robot is thinking........ (aka {vlm_client.name} vlm)")
 
                             img = robot_instance.get_current_img()
                             current_task = vlm_client.generate_vla_prompt(img)
@@ -381,9 +375,7 @@ if __name__ == "__main__":
 
                         else:
                             current_task = random.choice(list(TaskToString))
-                            print_green(
-                                f" 🤖 Robot selected new random move: \n -> '{current_task}'"
-                            )
+                            print_green(f" 🤖 Robot selected new random move: \n -> '{current_task}'")
                         print_green(" 🦾 GR00T VLA is executing the move")
                         client_instance.set_lang_instruction(current_task.__str__())
 
