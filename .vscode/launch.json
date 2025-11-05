@@ -1,0 +1,52 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Debug GR00T Fine-tune",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC",
+            "program": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC/scripts/gr00t_finetune.py",
+            "console": "integratedTerminal",
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0"
+            // },
+            "args": [
+                "--base-model-path",
+                "../models/GR00T-N1.5-3B",
+                "--dataset-path",
+                "./demo_data/robot_sim.PickNPlace",
+                "--num-gpus",
+                "1",
+                "--lora_rank",
+                "64",
+                "--lora_alpha",
+                "128",
+                "--batch-size",
+                "32",
+                "--report-to",
+                "tensorboard"
+            ]
+        },
+        {
+            "name": "Python Debugger: Debug Inference Test",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC",
+            "program": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC/scripts/inference_test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--arm=G1_29",
+                "--hand=dex3",
+                "--model-path=/home/tianzong_cheng/Workspace/OpenTrajBooster/VLA_model/models/PPTmodel4UnitreeG1/PPT_model",
+                "--goal=pick_mickey_mouse",
+                "--frequency=20",
+                "--vis",
+                "--filt"
+            ]
+        },
+    ]
+}
