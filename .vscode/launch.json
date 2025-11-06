@@ -32,6 +32,35 @@
             ]
         },
         {
+            "name": "Python Debugger: Debug PPT Model Fine-tune",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC",
+            "program": "${workspaceFolder}/VLA_model/gr00t_modified_for_OpenWBC/scripts/gr00t_finetune.py",
+            "console": "integratedTerminal",
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "0"
+            // },
+            "args": [
+                "--base-model-path",
+                "../models/PPTmodel4UnitreeG1/PPT_model",
+                "--dataset-path",
+                "../datasets/pick_cola_gr00t4",
+                "--output-dir",
+                "./save/pick_cola",
+                "--num-gpus",
+                "1",
+                "--batch-size",
+                "64",
+                "--report-to",
+                "tensorboard",
+                "--max_steps",
+                "20000",
+                "--data-config",
+                "openwbc_g1"
+            ]
+        },
+        {
             "name": "Python Debugger: Debug Inference Test",
             "type": "debugpy",
             "request": "launch",
