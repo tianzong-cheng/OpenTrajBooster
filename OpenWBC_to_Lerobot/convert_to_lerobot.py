@@ -58,11 +58,11 @@ def extract_state_vector(states_dict):
 
     # left_leg qpos (6维)
     if "left_leg" in states_dict and "qpos" in states_dict["left_leg"]:
-        state_parts.extend(states_dict["left_leg"]["qpos"])
+        state_parts.extend([0, 0, 0, 0, 0, 0])
 
     # right_leg qpos (6维)
     if "right_leg" in states_dict and "qpos" in states_dict["right_leg"]:
-        state_parts.extend(states_dict["right_leg"]["qpos"])
+        state_parts.extend([0, 0, 0, 0, 0, 0])
 
     return np.array(state_parts, dtype=np.float64)
 
@@ -88,13 +88,9 @@ def extract_action_vector(actions_dict):
     if "right_hand" in actions_dict and "qpos" in actions_dict["right_hand"]:
         action_parts.extend(actions_dict["right_hand"]["qpos"])
 
-    # controller command (4维) - 使用left_leg的qpos (因为left_leg和right_leg是相同的遥控器command)
+    # controller command (4维)
     if "left_leg" in actions_dict and "qpos" in actions_dict["left_leg"]:
-        # 这里qpos可能是嵌套列表 [[x,y,yaw,z]]，需要展平
-        controller_cmd = actions_dict["left_leg"]["qpos"]
-        if isinstance(controller_cmd[0], list):
-            controller_cmd = controller_cmd[0]  # 取第一个元素
-        action_parts.extend(controller_cmd)
+        action_parts.extend([0, 0, 0, 0.8])
 
     return np.array(action_parts, dtype=np.float64)
 
