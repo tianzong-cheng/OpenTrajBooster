@@ -136,7 +136,11 @@ class FourierGr1ArmsOnlyDataConfig(BaseDataConfig):
 
 ################################### our data ###########################################
 class OpenWBCDataConfig(BaseDataConfig):
-    video_keys = ["video.ego_view", "video.wrist_left", "video.wrist_right"]
+    video_keys = [
+        "video.ego_view",
+        # "video.wrist_left",
+        # "video.wrist_right"
+    ]
     state_keys = [
         "state.left_arm",
         "state.right_arm",
