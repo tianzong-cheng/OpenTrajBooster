@@ -77,5 +77,27 @@
                 "--filt"
             ]
         },
+        {
+            "name": "Python Debugger: Debug LeRobot Convert Script",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/OpenWBC_to_Lerobot",
+            "program": "${workspaceFolder}/OpenWBC_to_Lerobot/convert_to_lerobot.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--input_dir",
+                "~/Downloads/data/",
+                "--output_dir",
+                "./pick_tissue",
+                "--dataset_name",
+                "pick_tissue",
+                "--robot_type",
+                "g1",
+                "--fps",
+                "30",
+                "--video_enc",
+                "h264"
+            ]
+        },
     ]
 }
